@@ -21,6 +21,14 @@ def init_driver(executable_path=os.path.dirname(current_dir) + "\chromedriver-wi
     driver.implicitly_wait(2)  # Time before the program exits in case of exception in seconds, will not wait if the program runs normally
     
     return driver
+def enter_search(driver, search):
+    key_word=WebDriverWait(driver,10).until(EC.presence_of_element_located((By.CSS_SELECTOR,'input#keyword')))
+    key_word.send_keys(search)
+    search_button=WebDriverWait(driver,10).until(EC.presence_of_element_located((By.CSS_SELECTOR,'button#SearchHpBouton')))
+    search_button.click()
+    
 driver=init_driver()
 driver.get("https://www.rekrute.com")
+enter_search(driver, "Data")
+
 time.sleep(10)

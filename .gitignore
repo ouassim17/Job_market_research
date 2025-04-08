@@ -1,5 +1,14 @@
-/chromedriver-win64
-/venv
+
+/chromedriver-win64/
+
+
+/venv/
+
+
 *.json
+
+
 *.log
+
+
 *.env

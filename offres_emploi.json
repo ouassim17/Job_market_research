@@ -1,19 +1,19 @@
 [
     {
-        "company_description": "",
+        "company_description": "de formation supérieure en informatique, vous disposez d’une expérience de 5 ans et plus au sein de projet de développement, idéalement des projets bigdata.",
         "mission": "",
-        "publication_start": "",
-        "publication_end": "",
+        "publication_start": "08/04/2025",
+        "publication_end": "08/06/2025",
         "postes": "",
-        "secteur": "",
-        "fonction": "",
-        "experience": "",
-        "niveau": "",
-        "type_contrat": ""
+        "secteur": "Informatique",
+        "fonction": "Informatique / Electronique",
+        "experience": "De 3 à 5 ans",
+        "niveau": "Bac +5 et plus",
+        "type_contrat": "CDI - Télétravail : Hybride"
     },
     {
         "company_description": "ALTEN DELIVERY CENTER MAROC, Filiale du leader mondial de l’ingénierie et du conseil en technologie créé en 2008 et présent à Fès, Rabat, Tétouan et Casablanca, compte aujourd’hui plus de 2300...",
-        "mission": "Nous recherchons un(e) Data Analyst junior passionné(e) pour rejoindre notre équipe. Il/elle sera responsable de : Conception et déploiement des systèmes d'IA. Modélisation avancée pour résoudre...",
+        "mission": "",
         "publication_start": "08/04/2025",
         "publication_end": "08/06/2025",
         "postes": "1",
@@ -25,7 +25,7 @@
     },
     {
         "company_description": "qualifications: • master’s degree in engineering or doctor specialized in statistical analysis and computer programming or from a university with a major in data science, statistics or applied mathematics. • would be a plus: certifications in statistics / big data / machine learning. • 4+ years of experience in the same position. • fluent in french & english technical skills: • knowledge of statistics and machine learning. • mastery of analytical modeling tools, decision trees and neural networks (logistic, linear regression, etc.) and feature engineering. • mastery of technologies and models: xgboost, tensorflow, random forest, svm, etc. • ability to produce supervised and unsupervised models. • master of smote “the synthetic minority over-sampling technique”. • ability to analyze and extract insights from structured (in-depth knowledge of sql) and unstructured data. • be able to present the results of the models: lift curve, roc-auc, f1 score, recall, accuracy, confusion matrix, etc. • understanding of linear algebra and statistics. • development experience to extract and query data (python, r, spark, java). behavioral skills: • intellectual curiosity, initiative, proactivity. • organizational capacities. • autonomy, interpersonal skills, facilitator. • excellent written and oral communication skills.",
-        "mission": "Leyton est un cabinet de conseil international dédié à l’amélioration des performances économiques, sociales et environnementales des organisations. Ses consultants et experts techniques apportent des solutions...",
+        "mission": "",
         "publication_start": "07/04/2025",
         "publication_end": "01/06/2025",
         "postes": "",
@@ -37,7 +37,7 @@
     },
     {
         "company_description": "proven experience in ux/ui design, preferably in a saas, ai, or data-driven environment.",
-        "mission": "Leyton est un cabinet de conseil international dédié à l’amélioration des performances économiques, sociales et environnementales des organisations. Ses consultants et experts techniques apportent des solutions...",
+        "mission": "",
         "publication_start": "07/04/2025",
         "publication_end": "14/05/2025",
         "postes": "",
@@ -49,7 +49,7 @@
     },
     {
         "company_description": "join us to leverage your big data expertise and contribute to innovative projects in a dynamic and supportive environment!",
-        "mission": "Leyton Morocco is a global leader providing top-tier business and engineering services. With expert handling complex operations and a multilingual team, we support clients worldwide in areas such as innovation funding, consulting, energy and outsourced...",
+        "mission": "",
         "publication_start": "07/04/2025",
         "publication_end": "07/06/2025",
         "postes": "1",
@@ -61,7 +61,7 @@
     },
     {
         "company_description": "• diplôme d’ingénieur d’etat (ou équivalent) ou bac+5 en data engineering/data science (ou équivalent). • expérience significative (plus de 3 ans) dans des postes de gestion et analyse des données. • expérience avec des plateformes big data. • expérience avec business object et sap. • expérience dans l’élaboration de politiques et normes pour garantir la qualité, la sécurité, et l’interopérabilité des données à l’échelle de l’organisation. • connaissance des frameworks de gestion des données. • connaissance des réglementations et normes en la matière (lois, iso 27001,…). • capacité à travailler en étroite collaboration avec d’autres services pour intégrer les solutions et assurer leur bon fonctionnement. • capacité à s'adapter aux évolutions technologiques.",
-        "mission": "La SOCIETE DE DEVELOPPEMENT DES SERVICES PUBLICS DE DISTRIBUTION S.A. est une société de Développement Local, qui a pour missions de participer à la gestion et au développement des Services Publics de distribution, et cela...",
+        "mission": "",
         "publication_start": "05/04/2025",
         "publication_end": "05/06/2025",
         "postes": "1",
@@ -73,7 +73,7 @@
     },
     {
         "company_description": "bonne maîtrise des bases de données sql / nosql (dbl, postgresql, mongodb…) excellente maîtrise de sql et expérience avec bigquery. expertise dans la création et l’optimisation de dashboards sous looker studio. excellente communication écrite et orale : aptitude à produire des livrables et des reportings de haute qualité. expertise en python (pandas, numpy, pyspark…) esprit d'analyse et d'amélioration continue : capacité à évaluer le code et ses impacts, ainsi qu'à remettre en question les solutions existantes pour les améliorer. compréhension des principes devops et cloud (aws, gcp, azure) connaissance des architectures data modernes (data lake, data warehouse) capacité de prise de recul : aptitude à évaluer les problématiques avec objectivité et à proposer des solutions d'amélioration. esprit d'équipe : capacité à collaborer efficacement avec les membres de l'équipe pour atteindre des objectifs communs. maîtrise des concepts d’agilité (scrum, sprint planning, backlog…). capacité à travailler de manière autonome et à gérer son temps efficacement. gestion des versions et ci/cd avec gitlab ci",
-        "mission": "ALTEN DELIVERY CENTER MAROC, Filiale du leader mondial de l’ingénierie et du conseil en technologie créé en 2008 et présent à Fès, Rabat, Tétouan et Casablanca, compte aujourd’hui plus de 2300...",
+        "mission": "",
         "publication_start": "04/04/2025",
         "publication_end": "04/06/2025",
         "postes": "1",
@@ -85,7 +85,7 @@
     },
     {
         "company_description": "qualifications: • experience: 7+ years of experience in product management or ownership, with a significant focus on agritech products. • agriculture knowledge: deep understanding of the agriculture industry, including knowledge of farming practices and technology trends. • product leadership: proven ability to lead cross-functional product teams and drive product development from concept to launch. • customer-centric: strong customer empathy and the ability to translate customer needs into product features. • data-driven: comfortable with data analysis and using data to inform product decisions. • agile methodology: experience with agile development methodologies and tools. • communication: excellent communication and interpersonal skills. • problem solver: strong problem-solving skills and the ability to adapt in a rapidly changing environment. • education: bachelor's or master's degree in agriculture, agronomy, business, or a related field.",
-        "mission": "INNOVX est un impact Business Builder qui a pour ambition de développer les industries de demain en investissant et en développant des entreprises et des écosystèmes innovants à fort impact. Opérant dans des...",
+        "mission": "",
         "publication_start": "04/04/2025",
         "publication_end": "04/06/2025",
         "postes": "1",
@@ -97,7 +97,7 @@
     },
     {
         "company_description": "• planification minière (court, moyen et long terme) • géologie, géotechnique • gestion des entreprises et des contrats • planification des investissements • systèmes de maintenance et de gestion des actifs • suivi et pilotage de la production via un erp • data management • risk management • quality management • gestion de la performance • leadership • communication • manipulation des outils de planification minière",
-        "mission": "INNOVX est un impact Business Builder qui a pour ambition de développer les industries de demain en investissant et en développant des entreprises et des écosystèmes innovants à fort impact. Opérant dans des...",
+        "mission": "",
         "publication_start": "04/04/2025",
         "publication_end": "04/06/2025",
         "postes": "1",
@@ -109,7 +109,7 @@
     },
     {
         "company_description": "bac +5 en ecole d’ingénieur ou équivalent universitaire avec une spécialisation en data expérience : expérience professionnelle de 3 à 8 en en gestion de compte technique ou en support technique, dans un environnement saas ou data-driven",
-        "mission": "INNOVX est un impact Business Builder qui a pour ambition de développer les industries de demain en investissant et en développant des entreprises et des écosystèmes innovants à fort impact. Opérant dans des...",
+        "mission": "",
         "publication_start": "04/04/2025",
         "publication_end": "04/06/2025",
         "postes": "1",
@@ -121,7 +121,7 @@
     },
     {
         "company_description": "bachelor education level in an advanced it field (preferably development, project management, data…etc.)",
-        "mission": "Rejoignez Cnexia et faites le choix de faire partie d’un projet qui valorise l’innovation, promeut le développement continu des compétences et donne l’opportunité aux personnes créatives et ambitieuses du domaine...",
+        "mission": "",
         "publication_start": "03/04/2025",
         "publication_end": "13/05/2025",
         "postes": "3",
@@ -132,20 +132,8 @@
         "type_contrat": "CDI - Télétravail : Non"
     },
     {
-        "company_description": "",
-        "mission": "",
-        "publication_start": "",
-        "publication_end": "",
-        "postes": "",
-        "secteur": "",
-        "fonction": "",
-        "experience": "",
-        "niveau": "",
-        "type_contrat": ""
-    },
-    {
         "company_description": "maîtrise des outils de data analytics, bi et digitalisation des processus.",
-        "mission": "Mohammed VI Polytechnic University is an institution dedicated to research and innovation in Africa and aims to position itself among world-renowned universities in its fields The University is engaged in economic and human development and puts research and...",
+        "mission": "",
         "publication_start": "03/04/2025",
         "publication_end": "03/06/2025",
         "postes": "1",
@@ -157,7 +145,7 @@
     },
     {
         "company_description": "candidate qualifications:•    master's/engineer or degree in chemistry, biotechnology, food industry, or a related field.•    minimum of 3 years of experience in an analytical laboratory, preferably in r&d or quality control.•    proficiency in handling sophisticated equipment for chemical and biochemical characterization.•    strong expertise in method development, troubleshooting, and instrument calibration.•    familiarity with data analysis tools, chemometrics, and software interfaces for analytical instruments.•    experience with iso 17025 certification compliance is a plus.•    excellent organizational, communication, and collaboration skills (french & english proficiency required).•    ability to work independently and in a fast-paced, multi-disciplinary environment.•    strong problem-solving abilities and attention to detail.",
-        "mission": "Mohammed VI Polytechnic University is an institution dedicated to research and innovation in Africa and aims to position itself among world-renowned universities in its fields The University is engaged in economic and human development and puts research and...",
+        "mission": "",
         "publication_start": "03/04/2025",
         "publication_end": "03/06/2025",
         "postes": "1",
@@ -169,7 +157,7 @@
     },
     {
         "company_description": "minimum of 5 years of experience in a data science role with a proven track record of successful projects.",
-        "mission": "DXC Technology est née en avril 2017 d'une fusion entre CSC (Computer Sciences Corporation), Géant du Conseil et HP Enterprise Services, Leader en Services IT. Le Groupe DXC enregistre 25 milliards $ de revenus, bénéficie de...",
+        "mission": "",
         "publication_start": "03/04/2025",
         "publication_end": "03/06/2025",
         "postes": "2",
@@ -181,7 +169,7 @@
     },
     {
         "company_description": "mandatory skills: • mastery in modern, cloud based data/bi technologies (data lakes, delta lakes, data warehouses, etl/elt, spark) • 7 years experience with implementing data ingestion pipelines / etls / elts • in depth knowledge of azure platform and ecosystem - storage account, cosmosdb (sql & gremlin api), event hub, app services • experience with at following azure data technologies o azure sql o azure data lake o azure databricks (sql or python, delta lake) o azure data factory o azure analysis services o experience with sql • good communication • client facing",
-        "mission": "DXC Technology est née en Avril 2017 d'une fusion entre CSC (Computer Sciences Corporation), Géant du Conseil et HP Enterprise Services, Leader en Services IT. Le Groupe DXC enregistre 25 milliards $ de revenus, bénéficie de...",
+        "mission": "",
         "publication_start": "03/04/2025",
         "publication_end": "03/06/2025",
         "postes": "1",
@@ -193,7 +181,7 @@
     },
     {
         "company_description": "? has solid experience as a scrum master in an agile environment ? is proficient in jira for backlog management and sprint planning ? has basic knowledge of data concepts (experience in data is a plus but not mandatory) ? jira, confluence – agile project management ? strong communication & leadership ? understanding of data workflows (nice to have)",
-        "mission": "Capgemini Engineering est la marque du groupe Capgemini réunissant les services d'ingénierie et de R&D d’Altran, leader mondial du secteur dont Capgemini a finalisé l’acquisition en 2020, et l’expertise de...",
+        "mission": "",
         "publication_start": "02/04/2025",
         "publication_end": "04/05/2025",
         "postes": "",
@@ -205,7 +193,7 @@
     },
     {
         "company_description": "connaissance larges en solutions d’infrastructure notamment sur les data centres",
-        "mission": "La Centrale Automobile Chérifienne (CAC) est l'importateur exclusif au Maroc des marques Volkswagen, Volkswagen Utilitaires, Audi, Skoda, Porsche et Bentley, ayant chacune développée une réelle identité les rendant...",
+        "mission": "",
         "publication_start": "02/04/2025",
         "publication_end": "18/04/2025",
         "postes": "1",
@@ -217,7 +205,7 @@
     },
     {
         "company_description": "javascript / html / css: required to be able to develop and deploy frontend webpages, dashboards, and ui's for our internal tools and applications. knowledgable about developing database driven dashboards, and creating mapping interfaces using libraries such as leaflet and mapbox.",
-        "mission": "Joining Cnexia is choosing to be part of an ambitious project that values Innovation, promotes Continuous Learning and enables all tech champions to fulfill their creative dreams. At Cnexia, we do more than support the clients of our world-class network...",
+        "mission": "",
         "publication_start": "02/04/2025",
         "publication_end": "02/06/2025",
         "postes": "1",
@@ -229,7 +217,7 @@
     },
     {
         "company_description": "proficiency with data analysis tools (e.g., excel, power bi, minitab). strong organizational and analytical skills. excellent communication and problem-solving abilities. cad catia & ou nx plm microsoft office familiarity with qms standards like iso 9001 and iatf 16949 certifications in iso auditing, six sigma, or related quality disciplines. proficiency in quality analysis tools (e.g., fmea, 8d, spc).",
-        "mission": "ALTEN DELIVERY CENTER MAROC, a subsidiary of the world leader in engineering and technology consulting created in 2008 and present in Fez, Rabat, Tetouan and Casablanca, now has more than 2,300 consultants and is aiming for a center of excellence of 3,100...",
+        "mission": "",
         "publication_start": "28/03/2025",
         "publication_end": "21/04/2025",
         "postes": "1",
@@ -241,25 +229,13 @@
     },
     {
         "company_description": "master’s degree in data",
-        "mission": "ALTEN DELIVERY CENTER MAROC, Filiale du leader mondial de l’ingénierie et du conseil en technologie créé en 2008 et présent à Fès, Rabat, Tétouan et Casablanca, compte aujourd’hui plus de 2300...",
+        "mission": "",
         "publication_start": "28/03/2025",
         "publication_end": "12/04/2025",
         "postes": "1",
         "secteur": "Informatique",
         "fonction": "Informatique / Electronique",
         "experience": "De 5 à 10 ans",
-        "niveau": "Bac +5 et plus",
-        "type_contrat": "CDI - Télétravail : Hybride"
-    },
-    {
-        "company_description": "compétences techniques requises : • grafana, influxdb, • agile (confluence, jira), • azure, • databricks, postgresql, kusto • python, mql, prometheus, bigquery, • anglais b2",
-        "mission": "ALTEN DELIVERY CENTER MAROC, Filiale du leader mondial de l’ingénierie et du conseil en technologie créé en 2008 et présent à Fès, Rabat, Tétouan et Casablanca, compte aujourd’hui plus de 2300...",
-        "publication_start": "28/03/2025",
-        "publication_end": "13/04/2025",
-        "postes": "2",
-        "secteur": "Automobile / Motos / Cycles",
-        "fonction": "Informatique / Electronique",
-        "experience": "De 1 à 3 ans",
         "niveau": "Bac +5 et plus",
         "type_contrat": "CDI - Télétravail : Hybride"
     }

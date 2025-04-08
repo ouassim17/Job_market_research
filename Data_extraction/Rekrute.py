@@ -5,7 +5,21 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
+from selenium_init import init_driver
+def highlight(element, effect_time=1, color="yellow", border="2px solid red"):
+    """Highlights (blinks) a Selenium WebDriver element."""
+    driver = element._parent  # access the WebDriver instance
+    original_style = element.get_attribute("style")
+    highlight_style = f"background: {color}; border: {border};"
 
+    driver.execute_script(
+        f"arguments[0].setAttribute('style', arguments[1]);", element, highlight_style
+    )
+    import time
+    time.sleep(effect_time)
+    driver.execute_script(
+        f"arguments[0].setAttribute('style', arguments[1]);", element, original_style
+    )
 
 # --- Fonction d'extraction des offres sur la page courante ---
 def extract_offers():
@@ -15,15 +29,21 @@ def extract_offers():
     
     for holder in holders[1:]:  # Ignorer le premier conteneur qui est un filtre
         try:
+            
             info_divs = holder.find_elements(By.CSS_SELECTOR, "div.info")
         except NoSuchElementException:
             info_divs = []
         
-        # 1. Récupérer la description (première div.info)
+        # 1. Récupérer la description du poste
         comp_desc = ""
         if len(info_divs) >= 1:
             try:
-                comp_desc = info_divs[0].find_element(By.TAG_NAME, "span").text.strip()
+                field = holder.find_element(By.CSS_SELECTOR, 'i.fa.fa-industry')
+                highlight(field)
+                parent_div = field.find_element(By.XPATH, './ancestor::div[1]')
+                highlight(parent_div)
+                comp_desc = parent_div.find_element(By.TAG_NAME, "span").text.strip()
+                
             except NoSuchElementException:
                 comp_desc = ""
         
@@ -31,7 +51,11 @@ def extract_offers():
         mission = ""
         if len(info_divs) >= 2:
             try:
-                mission = info_divs[1].find_element(By.TAG_NAME, "span").text.strip()
+                field = holder.find_element(By.CSS_SELECTOR, 'i.fa.fa-search')
+                highlight(field)
+                parent_div = field.find_element(By.XPATH, './ancestor::div[1]')
+                highlight(parent_div)
+                mission = parent_div.find_element(By.TAG_NAME, "span").text.strip()
             except NoSuchElementException:
                 mission = ""
         
@@ -83,7 +107,7 @@ def extract_offers():
     return offers_list
 
 # --- Initialisation du driver Chrome ---
-driver = webdriver.Chrome()
+driver = init_driver()
 data = []  # Liste qui contiendra toutes les offres
 
 try:

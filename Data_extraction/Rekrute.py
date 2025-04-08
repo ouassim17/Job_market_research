@@ -6,7 +6,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from selenium_init import init_driver
-def highlight(element, effect_time=1, color="yellow", border="2px solid red"):
+import time
+def highlight(element, effect_time=0.3, color="yellow", border="2px solid red"):
     """Highlights (blinks) a Selenium WebDriver element."""
     driver = element._parent  # access the WebDriver instance
     original_style = element.get_attribute("style")
@@ -33,8 +34,18 @@ def extract_offers():
             info_divs = holder.find_elements(By.CSS_SELECTOR, "div.info")
         except NoSuchElementException:
             info_divs = []
-        
-        # 1. Récupérer la description du poste
+        # 1. Récupérer les prerequis du poste 
+        required_skills = ""
+        if len(info_divs) >= 2:
+            try:
+                field = holder.find_element(By.CSS_SELECTOR, 'i.fa.fa-search')
+                highlight(field)
+                parent_div = field.find_element(By.XPATH, './ancestor::div[1]')
+                highlight(parent_div)
+                required_skills = parent_div.find_element(By.TAG_NAME, "span").text.strip()
+            except NoSuchElementException:
+                required_skills = ""
+        # 2. Récupérer la description de la societe
         comp_desc = ""
         if len(info_divs) >= 1:
             try:
@@ -47,22 +58,23 @@ def extract_offers():
             except NoSuchElementException:
                 comp_desc = ""
         
-        # 2. Récupérer la mission (deuxième div.info)
+        
+        # 3. Récupérer la description de la mission
         mission = ""
         if len(info_divs) >= 2:
             try:
-                field = holder.find_element(By.CSS_SELECTOR, 'i.fa.fa-search')
+                field = holder.find_element(By.CSS_SELECTOR, 'i.fa.fa-binoculars')
                 highlight(field)
                 parent_div = field.find_element(By.XPATH, './ancestor::div[1]')
                 highlight(parent_div)
                 mission = parent_div.find_element(By.TAG_NAME, "span").text.strip()
             except NoSuchElementException:
                 mission = ""
-        
-        # 3. Récupérer les dates de publication et le nombre de postes (<em class="date">)
+        # 4. Récupérer les dates de publication et le nombre de postes (<em class="date">)
         pub_start = pub_end = postes = ""
         try:
             date_elem = holder.find_element(By.CSS_SELECTOR, "em.date")
+            highlight(date_elem)
             spans = date_elem.find_elements(By.TAG_NAME, "span")
             pub_start = spans[0].text.strip() if len(spans) > 0 else ""
             pub_end = spans[1].text.strip() if len(spans) > 1 else ""
@@ -70,13 +82,14 @@ def extract_offers():
         except NoSuchElementException:
             pass
         
-        # 4. Récupérer les détails complémentaires (dernière div.info contenant une liste <li>)
+        # 5. Récupérer les détails complémentaires (dernière div.info contenant une liste <li>)
         secteur = fonction = experience = niveau = contrat = ""
         if len(info_divs) >= 3:
             try:
                 details_div = info_divs[-1]
                 li_items = details_div.find_elements(By.TAG_NAME, "li")
                 for li in li_items:
+                    highlight(li)
                     txt = li.text.strip()
                     if "Secteur d'activité" in txt:
                         secteur = txt.split(":", 1)[1].strip()
@@ -92,6 +105,7 @@ def extract_offers():
                 pass
         
         offer = {
+            "required_skills": required_skills,
             "company_description": comp_desc,
             "mission": mission,
             "publication_start": pub_start,
@@ -106,11 +120,12 @@ def extract_offers():
         offers_list.append(offer)
     return offers_list
 
-# --- Initialisation du driver Chrome ---
-driver = init_driver()
-data = []  # Liste qui contiendra toutes les offres
+
 
 try:
+    # --- Initialisation du driver Chrome ---
+    driver = init_driver()
+    data = []  # Liste qui contiendra toutes les offres
     # Accéder à la page de base
     base_url = "https://www.rekrute.com/offres-emploi-maroc.html"
     driver.get(base_url)
@@ -121,7 +136,28 @@ try:
     )
     search_input.clear()
     search_input.send_keys("DATA" + Keys.RETURN)
-    
+    # --- Récupération de la pagination via le <select> dans la div "slide-block" ---
+    try:
+        # Sélecteur adapté pour la nouvelle structure
+        pagination = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "div.slide-block div.pagination"))
+        )
+        amount_of_offers=pagination.find_element(By.CSS_SELECTOR, "ul.amount").find_elements(By.TAG_NAME, "li")
+        last_page_amount=amount_of_offers[-1]
+        link=last_page_amount.find_element(By.TAG_NAME,"a").get_attribute("href")
+        print("The link is : ", link)
+        driver.get(link)
+        time.sleep(2)
+
+        pagination = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "div.slide-block div.pagination select"))
+        )
+        options = pagination.find_elements(By.TAG_NAME, "option")
+        total_pages = len(options)
+        print("Nombre total de pages (d'après le select) :", total_pages)
+    except Exception as e:
+        print("Pagination select non trouvée. Utilisation d'une seule page.", e)
+        options = []
     # Attendre que les résultats s'affichent (présence d'au moins un conteneur "div.holder")
     WebDriverWait(driver, 15).until(
         EC.presence_of_element_located((By.CSS_SELECTOR, "div.holder"))
@@ -129,20 +165,6 @@ try:
     
     # --- Extraction des offres sur la première page ---
     data.extend(extract_offers())
-    
-    # --- Récupération de la pagination via le <select> dans la div "slide-block" ---
-    try:
-        # Sélecteur adapté pour la nouvelle structure
-        pagination_select = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "div.slide-block div.pagination select"))
-        )
-        options = pagination_select.find_elements(By.TAG_NAME, "option")
-        total_pages = len(options)
-        print("Nombre total de pages (d'après le select) :", total_pages)
-    except Exception as e:
-        print("Pagination select non trouvée. Utilisation d'une seule page.", e)
-        options = []
-    
     # --- Itération sur les pages suivantes en utilisant les options du <select> ---
     if options:
         # On ignore la première option puisque c'est la page actuelle déjà traitée

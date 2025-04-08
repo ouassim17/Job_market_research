@@ -1,8 +1,12 @@
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
+import os
+from dotenv import load_dotenv
+    
 # --- Insertion dans MongoDB ---
 try:
-    uri = "mongodb+srv://cluster0:Svk8QrZlsoMuSp1n@cluster0.4eopzup.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+    load_dotenv()
+    uri = os.environ.get("MONGO_DB_URI")
     client = MongoClient(uri, tls=True, tlsAllowInvalidCertificates=False, server_api=ServerApi('1'))
     db = client["DXC"]
     collection = db["rekrute"]
@@ -15,4 +19,4 @@ try:
 except Exception as e:
     print("Erreur lors de l'insertion dans MongoDB :", e)
 finally:
-    client.close()
+    client.close()

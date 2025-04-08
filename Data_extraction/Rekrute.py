@@ -7,7 +7,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from selenium_init import init_driver
 import time
-def highlight(element, effect_time=1, color="yellow", border="2px solid red",active=True):
+def highlight(element, effect_time=0.3, color="yellow", border="2px solid red",active=True):
     if active:
         """Highlights (blinks) a Selenium WebDriver element."""
         driver = element._parent  

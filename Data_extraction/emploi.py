@@ -12,6 +12,7 @@ from selenium_init import init_driver
 
 
 
+
 # --- Configuration du ChromeDriver ---
 
 driver = init_driver()  # Initialiser le driver avec le chemin du ChromeDriver

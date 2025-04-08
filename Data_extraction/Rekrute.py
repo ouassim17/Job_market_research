@@ -7,36 +7,50 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from selenium_init import init_driver
 import time
-def highlight(element, effect_time=0.3, color="yellow", border="2px solid red"):
-    """Highlights (blinks) a Selenium WebDriver element."""
-    driver = element._parent  # access the WebDriver instance
-    original_style = element.get_attribute("style")
-    highlight_style = f"background: {color}; border: {border};"
+def highlight(element, effect_time=1, color="yellow", border="2px solid red",active=True):
+    if active:
+        """Highlights (blinks) a Selenium WebDriver element."""
+        driver = element._parent  
+        original_style = element.get_attribute("style")
+        highlight_style = f"background: {color}; border: {border};"
 
-    driver.execute_script(
-        f"arguments[0].setAttribute('style', arguments[1]);", element, highlight_style
-    )
-    import time
-    time.sleep(effect_time)
-    driver.execute_script(
-        f"arguments[0].setAttribute('style', arguments[1]);", element, original_style
-    )
+        driver.execute_script(
+            f"arguments[0].setAttribute('style', arguments[1]);", element, highlight_style
+        )
+        import time
+        time.sleep(effect_time)
+        driver.execute_script(
+            f"arguments[0].setAttribute('style', arguments[1]);", element, original_style
+        )
 
 # --- Fonction d'extraction des offres sur la page courante ---
 def extract_offers():
     offers_list = []
+    
     holders = driver.find_elements(By.CSS_SELECTOR, "div.holder")
-    print("Offres trouvées sur cette page :", len(holders))
+    print("Offres trouvées sur cette page :", len(holders)-1)
     
     for holder in holders[1:]:  # Ignorer le premier conteneur qui est un filtre
         try:
-            
             info_divs = holder.find_elements(By.CSS_SELECTOR, "div.info")
         except NoSuchElementException:
             info_divs = []
+
+        Job_title = ""
+        try:
+            parent_div = holder.find_element(By.XPATH, './ancestor::div[1]')
+
+            job_title = parent_div.find_element(By.CSS_SELECTOR, 'a.titreJob')
+            job_url= job_title.get_attribute("href")
+            highlight(job_title)
+            Job_title = job_title.text.strip()
+
         # 1. Récupérer les prerequis du poste 
+        except NoSuchElementException:
+            Job_title = ""
+
         required_skills = ""
-        if len(info_divs) >= 2:
+        if len(info_divs) >= 1:
             try:
                 field = holder.find_element(By.CSS_SELECTOR, 'i.fa.fa-search')
                 highlight(field)
@@ -47,7 +61,7 @@ def extract_offers():
                 required_skills = ""
         # 2. Récupérer la description de la societe
         comp_desc = ""
-        if len(info_divs) >= 1:
+        if len(info_divs) >= 2:
             try:
                 field = holder.find_element(By.CSS_SELECTOR, 'i.fa.fa-industry')
                 highlight(field)
@@ -105,6 +119,7 @@ def extract_offers():
                 pass
         
         offer = {
+            "job_title": Job_title,
             "required_skills": required_skills,
             "company_description": comp_desc,
             "mission": mission,
@@ -115,17 +130,19 @@ def extract_offers():
             "fonction": fonction,
             "experience": experience,
             "niveau": niveau,
-            "type_contrat": contrat
+            "type_contrat": contrat,
+            "url": job_url
         }
         offers_list.append(offer)
     return offers_list
-
-
-
-try:
-    # --- Initialisation du driver Chrome ---
-    driver = init_driver()
-    data = []  # Liste qui contiendra toutes les offres
+def save_json(data, filename="offres_emploi.json"):
+    # --- Sauvegarde locale en JSON (pour vérification) ---
+    json_filename = filename
+    with open(json_filename, "w", encoding="utf-8") as js_file:
+        json.dump(data, js_file, ensure_ascii=False, indent=4)
+    print(f"Les informations ont été enregistrées dans {json_filename}.")
+def access_rekrute(driver):
+    
     # Accéder à la page de base
     base_url = "https://www.rekrute.com/offres-emploi-maroc.html"
     driver.get(base_url)
@@ -136,7 +153,8 @@ try:
     )
     search_input.clear()
     search_input.send_keys("DATA" + Keys.RETURN)
-    # --- Récupération de la pagination via le <select> dans la div "slide-block" ---
+    
+def get_pages_url(driver):
     try:
         # Sélecteur adapté pour la nouvelle structure
         pagination = WebDriverWait(driver, 10).until(
@@ -144,42 +162,52 @@ try:
         )
         amount_of_offers=pagination.find_element(By.CSS_SELECTOR, "ul.amount").find_elements(By.TAG_NAME, "li")
         last_page_amount=amount_of_offers[-1]
-        link=last_page_amount.find_element(By.TAG_NAME,"a").get_attribute("href")
-        print("The link is : ", link)
-        driver.get(link)
+        page_link=last_page_amount.find_element(By.TAG_NAME,"a").get_attribute("href")
+        driver.get(page_link)
         time.sleep(2)
 
         pagination = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "div.slide-block div.pagination select"))
         )
-        options = pagination.find_elements(By.TAG_NAME, "option")
-        total_pages = len(options)
-        print("Nombre total de pages (d'après le select) :", total_pages)
+        page_options = pagination.find_elements(By.TAG_NAME, "option")
+        total_pages = len(page_options)
+        print("Nombre total de pages :", total_pages)
+        page_urls = [url.get_attribute("value") for url in page_options]
+
     except Exception as e:
         print("Pagination select non trouvée. Utilisation d'une seule page.", e)
-        options = []
-    # Attendre que les résultats s'affichent (présence d'au moins un conteneur "div.holder")
-    WebDriverWait(driver, 15).until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, "div.holder"))
-    )
-    
-    # --- Extraction des offres sur la première page ---
-    data.extend(extract_offers())
-    # --- Itération sur les pages suivantes en utilisant les options du <select> ---
-    if options:
+        page_urls = []
+    return page_urls
+def change_page(driver, page_urls,data):
+    if page_urls:
         # On ignore la première option puisque c'est la page actuelle déjà traitée
-        for option in options[1:]:
-            page_url = option.get_attribute("value")
+        for url in page_urls:
+            
             # Si l'URL est relative, on complète avec le domaine
-            if not page_url.startswith("http"):
-                page_url = "https://www.rekrute.com" + page_url
-            print("Navigation vers la page :", page_url)
-            driver.get(page_url)
+            if not url.startswith("http"):
+                url = "https://www.rekrute.com" + url
+                print("accessing the url: ", url)
+            print("Navigation vers la page :", url)
+            driver.get(url)
             WebDriverWait(driver, 15).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "div.holder"))
             )
             data.extend(extract_offers())
             print("Page traitée, total offres cumulées :", len(data))
+try:
+    # --- Initialisation du driver Chrome ---
+    driver = init_driver()
+    data = []  # Liste qui contiendra toutes les offres
+    access_rekrute(driver)
+    print("Accès à la page de recherche réussi.")
+    page_urls=get_pages_url(driver)
+    print("les urls extraits: ",page_urls)
+   
+    print("Extraction des offres sur la page actuelle...")
+    change_page(driver,page_urls,data)
+    
+    save_json(data, filename="offres_emploi_rekrute.json")
+    
             
 except Exception as e:
     print("Erreur lors de l'extraction :", e)
@@ -187,10 +215,5 @@ finally:
     driver.quit()
     print("Extraction terminée !")
 
-# --- Sauvegarde locale en JSON (pour vérification) ---
-json_filename = "offres_emploi.json"
-with open(json_filename, "w", encoding="utf-8") as js_file:
-    json.dump(data, js_file, ensure_ascii=False, indent=4)
-print(f"Les informations ont été enregistrées dans {json_filename}.")
 
 

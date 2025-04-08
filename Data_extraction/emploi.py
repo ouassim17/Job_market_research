@@ -1,3 +1,4 @@
+import json
 import time
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -7,24 +8,20 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
+from selenium_init import init_driver
 
 
 
 # --- Configuration du ChromeDriver ---
-service = Service(executable_path="C:/Users/khalm/Documents/Stage2025/Job_analytics/chromedriver-win64/chromedriver.exe")
-options = Options()
-# options.add_argument("--headless")  # Décommentez pour exécuter en mode headless
-driver = webdriver.Chrome(service=service, options=options)
+
+driver = init_driver()  # Initialiser le driver avec le chemin du ChromeDriver
 
 jobs = []  # Liste pour stocker les données scrappées
 
 try:
     # Accéder à l'URL de recherche d'offres
-    url = "https://www.emploi.ma/recherche-jobs-maroc/data?"
+    url = "https://www.emploi.ma/recherche-jobs-maroc/data?f%5B0%5D=im_field_offre_metiers%3A31"
     driver.get(url)
-    
-    # Attendre 5 secondes pour le chargement initial de la page
-    time.sleep(5)
     
     # Essayer de localiser le champ de recherche ; parfois le sélecteur peut être différent
     try:
@@ -146,10 +143,3 @@ print("Nombre total d'offres extraites :", len(jobs))
 with open("emplois_ma_data_ai_ml_debug.json", "w", encoding="utf-8") as f:
     json.dump(jobs, f, ensure_ascii=False, indent=2)
 print("Les données ont été sauvegardées dans emplois_ma_data_ai_ml_debug.json")
-
-# Insertion dans MongoDB
-if jobs:
-    result = collection.insert_many(jobs)  # Insert the jobs into MongoDB
-    print("Documents insérés dans MongoDB, IDs :", result.inserted_ids)
-else:
-    print("Aucune donnée à insérer dans MongoDB.")

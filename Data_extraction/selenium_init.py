@@ -17,3 +17,18 @@ def init_driver(executable_path=os.path.dirname(current_dir) + "\chromedriver-wi
     driver.implicitly_wait(2)  # Time before the program exits in case of exception in seconds, will not wait if the program runs normally
     
     return driver
+def highlight(element, effect_time=0.3, color="yellow", border="2px solid red",active=True):
+    if active:
+        """Highlights (blinks) a Selenium WebDriver element."""
+        driver = element._parent  
+        original_style = element.get_attribute("style")
+        highlight_style = f"background: {color}; border: {border};"
+
+        driver.execute_script(
+            f"arguments[0].setAttribute('style', arguments[1]);", element, highlight_style
+        )
+        import time
+        time.sleep(effect_time)
+        driver.execute_script(
+            f"arguments[0].setAttribute('style', arguments[1]);", element, original_style
+        )

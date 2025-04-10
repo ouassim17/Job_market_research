@@ -41,4 +41,5 @@ def run_data_extraction_scripts():
 if __name__ == "__main__":
     print("Début de l'extraction des données...")
     run_data_extraction_scripts()
+    
     print("\nTous les scripts d'extraction ont été traités!")

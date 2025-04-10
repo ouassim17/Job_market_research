@@ -1,114 +1,197 @@
-import json
 import os
+import json
+import logging
+import re
+import time
+from datetime import datetime
+import requests
+from dotenv import load_dotenv
+from typing import List, Dict, Any
 
-def normalize_entry(entry):
-    """
-    Normalise une entrée en détectant son format et en mappant les champs
-    vers une structure commune.
+# Configuration des logs
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler("traitement.log"),
+        logging.StreamHandler()
+    ]
+)
 
-    Format 1 attendu (emplois_ma_data_ai_ml_debug.json) :
-      - job_url, title, company, description, niveau_etudes, niveau_experience,
-        contrat, region, competences, publication_date
+# Chargement des variables d'environnement
+load_dotenv()
+API_KEY = os.getenv("GROQ_API_KEY")
+if not API_KEY or not API_KEY.startswith("gsk_"):
+    logging.error("Clé API Groq non configurée - Vérifiez .env")
+    exit(1)
 
-    Format 2 attendu (offres_emploi_rekrute.json) :
-      - job_title, required_skills, company_description, mission, publication_start,
-        publication_end, postes, secteur, fonction, experience, niveau, type_contrat, url
-    """
-    # Si l'entrée possède "job_url", on considère qu'il s'agit du format 1
-    if 'job_url' in entry:
-        normalized = {
-            "job_url": entry.get("job_url"),
-            "title": entry.get("title"),
-            "company": entry.get("company"),
-            "description": entry.get("description"),
-            "niveau_etudes": entry.get("niveau_etudes"),
-            "niveau_experience": entry.get("niveau_experience"),
-            "contrat": entry.get("contrat"),
-            "region": entry.get("region"),
-            "competences": entry.get("competences"),
-            "publication_date": entry.get("publication_date")
-        }
-    # Si l'entrée contient "url" ou "job_title", on considère le format 2
-    elif 'url' in entry or 'job_title' in entry:
-        normalized = {
-            "job_url": entry.get("url"),
-            "title": entry.get("job_title"),
-            # Pour la société, il n'y a pas de champ explicite ; vous pouvez ajuster si besoin
-            "company": entry.get("company_description"),
-            # On privilégie la mission si elle est présente, sinon on prend les compétences requises
-            "description": entry.get("mission") or entry.get("required_skills"),
-            # On utilise 'niveau' comme niveau d’études
-            "niveau_etudes": entry.get("niveau"),
-            # Pour l’expérience, on utilise 'experience'
-            "niveau_experience": entry.get("experience"),
-            "contrat": entry.get("type_contrat"),
-            # Pas de donnée sur la région dans ce format (ajuster si besoin)
-            "region": None,
-            # On peut mettre les compétences depuis 'required_skills'
-            "competences": entry.get("required_skills"),
-            # On choisit la date de publication de début
-            "publication_date": entry.get("publication_start")
-        }
-    else:
-        # Si le format ne correspond pas aux cas prévus, on renvoie l'entrée sans modification
-        normalized = entry
-    return normalized
+def load_json(file_path: str) -> List[Dict[str, Any]]:
+    """Charge le fichier JSON d'entrée"""
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception as e:
+        logging.error(f"Erreur de lecture {file_path} : {str(e)}")
+        exit(1)
 
-def load_json_file(filepath):
-    """Charge un fichier JSON et retourne la liste des objets."""
-    if os.path.exists(filepath):
-        with open(filepath, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            # Le contenu peut être une liste ou un seul objet
-            return data if isinstance(data, list) else [data]
-    else:
-        raise FileNotFoundError(f"Le fichier {filepath} n'existe pas.")
+def prepare_offer(offer: Dict[str, Any]) -> Dict[str, Any]:
+    """Prépare les données pour l'API en conservant les champs importants"""
+    return {
+        "title": (offer.get("title", "") or "")[:200],
+        "description": (offer.get("description", "") or "")[:1000],
+        "competences": [c.strip() for c in (offer.get("competences", "") or "").split("-") if c.strip()]
+    }
 
-def remove_duplicates(data, unique_keys):
-    """
-    Supprime les doublons à partir d'une ou plusieurs clés définissant l'unicité.
-    Si une entrée est dupliquée, on fusionne les attributs (la méthode update garde
-    en priorité la dernière valeur rencontrée).
-    """
-    seen = {}
-    for item in data:
-        key = tuple(item.get(k) for k in unique_keys)
-        if key not in seen:
-            seen[key] = item
+def clean_response(response_text: str) -> List[Dict[str, Any]]:
+    """Extrait et nettoie la réponse JSON depuis la réponse de l'API"""
+    json_pattern = r'```(?:json)?\s*([\s\S]*?)\s*```|(\[.*\])'
+    matches = re.findall(json_pattern, response_text, re.IGNORECASE | re.DOTALL)
+    
+    for match in matches:
+        json_segment = match[0] or match[1]
+        try:
+            data = json.loads(json_segment)
+            for entry in data:
+                # Conversion sécurisée de niveau_qualification en entier si possible
+                try:
+                    entry["niveau_qualification"] = int(entry.get("niveau_qualification", 0))
+                except (ValueError, TypeError):
+                    entry["niveau_qualification"] = entry.get("niveau_qualification", 0)
+                if "competences" in entry and isinstance(entry["competences"], list):
+                    entry["competences"] = [c.strip() for c in entry["competences"] if c.strip()]
+            return data
+        except json.JSONDecodeError:
+            logging.error(f"JSONDecodeError pour le segment (limité à 500 caractères) : {json_segment[:500]}")
+            continue
+
+    logging.error("Format de réponse non détecté")
+    return []
+
+def process_with_groq(batch: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Envoie une requête à l'API Groq pour homogénéiser et classifier les titres"""
+    GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+    max_retries = 3
+    base_retry_delay = 2
+    
+    system_prompt = (
+        """CLASSIFICATION, NORMALISATION ET ENRICHISSEMENT DES TITRES D'OFFRES D'EMPLOI
+Tu es un expert en RH et en analyse d'offres d'emploi. Tu reçois une liste d'offres provenant d'un fichier JSON comprenant les champs 'title', 'description', et 'competences'.
+Ta mission est de :
+
+Traiter et homogénéiser le titre de chaque offre en générant un champ 'titre_homogene' qui regroupe des intitulés similaires sous un libellé standard (par exemple, transformer 'Développeur Senior React/Next.js - Casablanca' en 'Développeur Frontend ').
+
+Déduire le 'secteur' d'activité à partir du titre et de la description (par exemple, 'Informatique', 'Data', 'Cloud', etc.).
+
+Déterminer le 'niveau_qualification' sous forme d'un entier de 1 à 5 (où 1 correspond à un niveau Bac et 5 à un niveau Doctorat), en se basant sur les informations du niveau d'études et de l'expérience indiqués dans les offres.
+
+Ajouter, si nécessaire, d'autres colonnes pertinentes pour garantir que les données finales soient propres, claires et cohérentes, tout en conservant la structure de base des données.
+
+Réponds uniquement avec un JSON valide, qui est une liste d'objets contenant obligatoirement les champs : 'title', 'titre_homogene', 'secteur', 'niveau_qualification'.
+
+Exemple de format de sortie :
+[
+{
+"title": "Customer Service Specialist (Spanish and Portuguese) - Rabat",
+"titre_homogene": "Spécialiste Service Client Bilingue",
+"secteur": "Service Client",
+"niveau_qualification": 1
+}
+]"""
+    )
+    
+    for attempt in range(max_retries):
+        try:
+            response = requests.post(
+                GROQ_API_URL,
+                headers={
+                    "Authorization": f"Bearer {API_KEY}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "model": "llama3-8b-8192",
+                    "temperature": 0.1,
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": json.dumps(batch, ensure_ascii=False)}
+                    ]
+                },
+                timeout=60
+            )
+            response.raise_for_status()
+            content = response.json()["choices"][0]["message"]["content"]
+            return clean_response(content)
+        
+        except requests.exceptions.HTTPError as e:
+            if response.status_code == 429 and attempt < max_retries - 1:
+                retry_after = response.headers.get("Retry-After")
+                wait = int(retry_after) if retry_after and retry_after.isdigit() else base_retry_delay * (2 ** attempt)
+                logging.warning(f"Trop de requêtes (429) - Retry dans {wait} secondes (essai {attempt+1})")
+                time.sleep(wait)
+                continue
+            else:
+                logging.error(f"Erreur API : {str(e)}")
+                return []
+        except Exception as e:
+            logging.error(f"Erreur lors de l'appel API : {str(e)}")
+            return []
+
+def main():
+    input_file = "merged_jobs.json"
+    output_file = "processed_jobs.json"
+    batch_size = 2  # Nombre d'offres par lot
+    cooldown_after_batches = 10  # Nombre de lots avant une pause longue
+    cooldown_delay = 60  # Délai en secondes pour la pause longue
+
+    data = load_json(input_file)
+    
+    # Diviser les données en lots
+    batches = [data[i:i+batch_size] for i in range(0, len(data), batch_size)]
+    total_batches = len(batches)
+    
+    results = []
+    for i, batch in enumerate(batches, 1):
+        logging.info(f"Traitement lot {i}/{total_batches}")
+        prepared_batch = [prepare_offer(offer) for offer in batch]
+        processed = process_with_groq(prepared_batch)
+        
+        if processed:
+            # Fusionner les résultats avec les données originales
+            for original, updated in zip(batch, processed):
+                original.update(updated)
+            results.extend(batch)
         else:
-            seen[key].update(item)
-    return list(seen.values())
+            logging.error(f"Lot {i} n'a pas pu être traité correctement.")
 
-def merge_files(file1, file2, unique_keys):
-    """
-    Traite deux fichiers JSON en les normalisant, puis les fusionne
-    et supprime les doublons.
-    """
-    data1 = load_json_file(file1)
-    data2 = load_json_file(file2)
+        # Pause courte entre chaque lot
+        time.sleep(5)
+        # Appliquer une pause longue après un certain nombre de lots
+        if i % cooldown_after_batches == 0:
+            logging.info(f"Cooldown : Pause de {cooldown_delay} secondes après {cooldown_after_batches} lots")
+            time.sleep(cooldown_delay)
     
-    normalized_data1 = [normalize_entry(item) for item in data1]
-    normalized_data2 = [normalize_entry(item) for item in data2]
+    # Générer le dictionnaire des titres homogénéisés
+    dictionnaire_titres = {}
+    for offer in results:
+        titre_norm = offer.get("titre_homogene", "").strip()
+        if titre_norm:
+            dictionnaire_titres[titre_norm] = dictionnaire_titres.get(titre_norm, 0) + 1
+
+    output = {
+        "metadata": {
+            "processed_at": datetime.now().isoformat(),
+            "total_processed": len(results),
+            "model": "llama3-8b-8192"
+        },
+        "results": results,
+        "dictionnaire_titres": dictionnaire_titres
+    }
     
-    # Fusionner les listes normalisées
-    all_data = normalized_data1 + normalized_data2
-    merged_data = remove_duplicates(all_data, unique_keys)
-    return merged_data
+    try:
+        with open(output_file, 'w', encoding='utf-8') as f:
+            json.dump(output, f, ensure_ascii=False, indent=2)
+        logging.info(f"✅ Traitement terminé : {output_file}")
+    except Exception as e:
+        logging.error(f"Erreur d'écriture : {str(e)}")
 
-# Chemins vers les fichiers d'entrée
-file1 = "emplois_ma_data_ai_ml_debug.json"
-file2 = "offres_emploi_rekrute.json"
-
-# On choisit "job_url" comme clé d'unicité (vous pouvez adapter si besoin)
-unique_keys = ["job_url"]
-
-# Fusion des fichiers
-try:
-    result = merge_files(file1, file2, unique_keys)
-    # Sauvegarder le résultat dans un fichier output.json
-    output_file = "merged_jobs.json"
-    with open(output_file, "w", encoding="utf-8") as f:
-        json.dump(result, f, indent=4, ensure_ascii=False)
-    print(f"Fusion terminée. Le résultat est sauvegardé dans {output_file}.")
-except Exception as e:
-    print("Une erreur est survenue :", e)
+if __name__ == "__main__":
+    main()

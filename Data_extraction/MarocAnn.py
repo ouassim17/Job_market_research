@@ -42,21 +42,26 @@ def extract_offers(driver):
 
 def extract_offer_details(driver, offer_url):
     """
-    Pour une URL donnée, accéder à la page de détails et extraire les informations contenues dans la classe 'block'.
+    Pour une URL donnée, accéder à la page de détails et extraire le contenu du bloc
+    situé dans le conteneur ayant les classes 'description desccatemploi'.
     """
     details = {}
     try:
         driver.get(offer_url)
-        # Attendre que l'élément de la classe 'block' soit présent (adapter le temps d'attente si nécessaire)
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CLASS_NAME, "block"))
+        # Attendre que l'élément contenant la description soit présent
+        desc_container = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "div.description.desccatemploi"))
         )
-        block_element = driver.find_element(By.CLASS_NAME, "block")
-        details_text = block_element.text.strip()
-        details["détails"] = details_text
+        # Recherche à l'intérieur du conteneur pour le bloc d'informations
+        try:
+            block_element = desc_container.find_element(By.CSS_SELECTOR, "div.block")
+            details_text = block_element.text.strip()
+            details["détails"] = details_text
+        except NoSuchElementException:
+            print(f"Aucun bloc trouvé dans la description pour {offer_url}")
         
     except TimeoutException:
-        print(f"Timeout lors de la récupération des détails pour {offer_url}")
+        print(f"Timeout lors de la récupération de la description pour {offer_url}")
     except Exception as e:
         print(f"Erreur lors de l'extraction des détails pour {offer_url} : {e}")
     
@@ -85,15 +90,15 @@ def main():
         offers = extract_offers(driver)
         print(f"Total offres extraites (page principale) : {len(offers)}")
         
-        # Pour chacune des offres, accéder à la page de détail et récupérer les données dans la classe "block"
+        # Pour chaque offre, accéder à la page de détail et récupérer les données dans la rubrique 'block'
         for offer in offers:
             url = offer.get("url")
             if url:
                 print(f"Extraction des détails de l'offre : {url}")
                 details = extract_offer_details(driver, url)
-                # Fusionner les détails avec l'offre initiale
+                # Fusionner les détails avec les informations initiales
                 offer.update(details)
-                # Petite pause pour limiter le nombre de requêtes trop rapide
+                # Pause pour éviter des requêtes trop rapides
                 time.sleep(1)
             else:
                 print("URL de l'offre introuvable, passage à l'offre suivante.")
@@ -101,7 +106,7 @@ def main():
         all_offers.extend(offers)
         print(f"Total offres complètes collectées : {len(all_offers)}")
         
-        # Sauvegarde des données
+        # Sauvegarde des données extraites
         save_json(all_offers)
         
     except Exception as e:

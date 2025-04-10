@@ -5,11 +5,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import (
-    NoSuchElementException, 
-    TimeoutException, 
-    WebDriverException
-)
+from selenium.common.exceptions import NoSuchElementException, TimeoutException, WebDriverException
 from selenium_init import init_driver
 
 def extract_offers(driver):
@@ -40,7 +36,8 @@ def extract_offers(driver):
 
 def parse_details_text(text):
     """
-    Parse le texte brut récupéré dans le conteneur 'used-cars' afin d'extraire une structure détaillée.
+    Parse le texte brut récupéré dans le conteneur 'used-cars'
+    afin d'extraire une structure détaillée.
     Retourne un dictionnaire structuré.
     """
     details = {}
@@ -98,12 +95,11 @@ def parse_details_text(text):
 
 def extract_offer_details(driver, offer_url):
     """
-    Accède à la page de détail d'une offre, récupère le contenu du conteneur 'div.used-cars'
-    et retourne un dictionnaire structuré des informations détaillées.
+    Accède à la page de détail d'une offre et récupère le contenu du conteneur 'div.used-cars'
+    en le structurant via parse_details_text.
     """
     details = {}
     try:
-        # Limite le temps de chargement de la page pour éviter les blocages prolongés
         driver.set_page_load_timeout(60)
         driver.get(offer_url)
         used_cars_container = WebDriverWait(driver, 15).until(
@@ -130,47 +126,46 @@ def save_json(data, filename="offres_marocannonces.json"):
     print(f"Données sauvegardées dans {filename}")
 
 def main():
-    driver = init_driver()  # Assurez-vous qu'init_driver configure bien le mode headless
+    driver = init_driver()  # Assurez-vous que init_driver configure bien le mode headless
     all_offers = []
     
-    base_url = "https://www.marocannonces.com/maroc/offres-emploi-b309.html?kw=data+"
-    driver.get(base_url)
-    WebDriverWait(driver, 15).until(
-        EC.presence_of_element_located((By.CSS_SELECTOR, "div.holder"))
-    )
+    # On construit l'URL de base avec le paramètre 'pge'
+    base_url = "https://www.marocannonces.com/maroc/offres-emploi-b309.html?kw=data+&pge={}"
     
     page_num = 1
     while True:
-        print(f"Scraping page {page_num}...")
-        offers = extract_offers(driver)
-        all_offers.extend(offers)
-        
+        url = base_url.format(page_num)
+        print(f"Scraping page {page_num} : {url}")
         try:
-            next_button = driver.find_element(By.CSS_SELECTOR, "a.next")
-            if next_button:
-                next_button.click()
-                page_num += 1
-                WebDriverWait(driver, 15).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, "div.holder"))
-                )
-                # Réduire le temps de pause si possible
-                time.sleep(0.5)
-            else:
-                print("Aucun bouton 'Suivant' trouvé.")
-                break
-        except Exception as e:
-            print("Aucune page suivante trouvée. Fin de la pagination.")
+            driver.get(url)
+            WebDriverWait(driver, 15).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "div.holder"))
+            )
+        except TimeoutException:
+            print(f"Timeout lors du chargement de la page {page_num}. Passage à la suivante.")
             break
+        except Exception as e:
+            print(f"Erreur lors du chargement de la page {page_num} : {e}")
+            break
+
+        offers = extract_offers(driver)
+        if not offers:
+            print("Aucune offre trouvée sur cette page. Fin de la pagination.")
+            break
+        all_offers.extend(offers)
+        # Passage à la page suivante
+        page_num += 1
+        time.sleep(0.5)
     
     print(f"Total offres extraites : {len(all_offers)}")
     
+    # Pour chaque offre, accéder à la page de détail pour extraire les informations structurées
     for offer in all_offers:
         url = offer.get("url")
         if url:
             print(f"Extraction des détails de l'offre : {url}")
             details = extract_offer_details(driver, url)
             offer.update(details)
-            # Réduire la pause entre l'extraction des détails
             time.sleep(0.5)
         else:
             print("URL introuvable pour cette offre, passage à la suivante.")

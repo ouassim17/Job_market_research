@@ -1,0 +1,9 @@
+pip install selenium
+
+pip install webdriver-manager
+
+pip install spacy
+
+pip install requests
+
+pip install groq python-dotenv

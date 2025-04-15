@@ -5,23 +5,9 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
-from selenium_init import init_driver
+from selenium_init import init_driver, highlight
 import time
-def highlight(element, effect_time=0.3, color="yellow", border="2px solid red",active=True):
-    if active:
-        """Highlights (blinks) a Selenium WebDriver element."""
-        driver = element._parent  
-        original_style = element.get_attribute("style")
-        highlight_style = f"background: {color}; border: {border};"
 
-        driver.execute_script(
-            f"arguments[0].setAttribute('style', arguments[1]);", element, highlight_style
-        )
-        import time
-        time.sleep(effect_time)
-        driver.execute_script(
-            f"arguments[0].setAttribute('style', arguments[1]);", element, original_style
-        )
 
 # --- Fonction d'extraction des offres sur la page courante ---
 def extract_offers():

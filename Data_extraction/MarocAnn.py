@@ -1,12 +1,22 @@
 import json
 import time
 import re
+import os
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException, TimeoutException, WebDriverException
 from selenium_init import init_driver
+
+OUTPUT_FILENAME = "offres_marocannonces.json"
+
+def load_existing_offers(filename):
+    """Charge les offres déjà sauvegardées (si le fichier existe)"""
+    if os.path.exists(filename):
+        with open(filename, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return []
 
 def extract_offers(driver):
     """
@@ -117,7 +127,7 @@ def extract_offer_details(driver, offer_url):
     
     return details
 
-def save_json(data, filename="offres_marocannonces.json"):
+def save_json(data, filename=OUTPUT_FILENAME):
     """
     Sauvegarde les données extraites dans un fichier JSON.
     """
@@ -126,12 +136,16 @@ def save_json(data, filename="offres_marocannonces.json"):
     print(f"Données sauvegardées dans {filename}")
 
 def main():
-    driver = init_driver()  # Assurez-vous que init_driver configure bien le mode headless
-    all_offers = []
+    # Chargement des offres existantes
+    existing_offers = load_existing_offers(OUTPUT_FILENAME)
+    # Création d'un ensemble des dates de publication déjà présentes
+    existing_pub_dates = {job["date_publication"] for job in existing_offers if "date_publication" in job and job["date_publication"]}
     
-    # On construit l'URL de base avec le paramètre 'pge'
+    driver = init_driver()  # Initialisation du driver (mode headless si configuré)
+    all_offers = []  # Liste temporaire pour les offres collectées dans cette session
+    
+    # Construction de l'URL de base (pagination)
     base_url = "https://www.marocannonces.com/maroc/offres-emploi-b309.html?kw=data+&pge={}"
-    
     page_num = 1
     while True:
         url = base_url.format(page_num)
@@ -152,25 +166,39 @@ def main():
         if not offers:
             print("Aucune offre trouvée sur cette page. Fin de la pagination.")
             break
+        
         all_offers.extend(offers)
-        # Passage à la page suivante
         page_num += 1
         time.sleep(0.5)
     
-    print(f"Total offres extraites : {len(all_offers)}")
+    print(f"Total offres extraites (avant détails) : {len(all_offers)}")
     
-    # Pour chaque offre, accéder à la page de détail pour extraire les informations structurées
+    new_offers = []  # Stockera uniquement les nouvelles offres
     for offer in all_offers:
-        url = offer.get("url")
-        if url:
-            print(f"Extraction des détails de l'offre : {url}")
-            details = extract_offer_details(driver, url)
+        offer_url = offer.get("url")
+        if offer_url:
+            print(f"Extraction des détails de l'offre : {offer_url}")
+            details = extract_offer_details(driver, offer_url)
             offer.update(details)
+            # Si la nouvelle offre possède une date de publication déjà existante, on passe l'offre
+            pub_date = offer.get("date_publication", "")
+            if pub_date and pub_date in existing_pub_dates:
+                print(f"Offre existante détectée (date: {pub_date}), non ajoutée.")
+                continue
+            new_offers.append(offer)
+            # Mettre à jour l'ensemble pour éviter d'ajouter plusieurs offres avec la même date
+            if pub_date:
+                existing_pub_dates.add(pub_date)
             time.sleep(0.5)
         else:
             print("URL introuvable pour cette offre, passage à la suivante.")
     
-    save_json(all_offers)
+    print(f"Nouvelles offres collectées : {len(new_offers)}")
+    
+    # Combinaison des offres existantes et des nouvelles offres (uniquement les nouvelles)
+    all_jobs = existing_offers + new_offers
+
+    save_json(all_jobs, OUTPUT_FILENAME)
     driver.quit()
     print("Extraction terminée !")
 

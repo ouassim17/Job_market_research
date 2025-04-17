@@ -5,8 +5,27 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException,ElementClickInterceptedException,ElementNotInteractableException
 from selenium_init import *
+import datetime
 import time
 import re
+def extract_date_from_text(text):
+    text = text.lower().strip()
+    if "yesterday" in text:
+        days=1
+    elif "days" in text:
+        match=re.search(r"(\d+)\s*days", text)
+        if match:
+            days=int(match.group(1))
+        else:
+            days=None
+    elif "days ago" in text:
+        match=re.search(r"(\d+)\s*days\s*ago", text)
+        if match:
+            days=int(match.group(1))
+        else:
+            days=None
+    date_publication=datetime.datetime.now()-datetime.timedelta(days=days)
+    return date_publication.strftime("%Y-%m-%d")
 
 def normalize_header(header,header_keywords):
     header = header.lower().strip()
@@ -17,10 +36,8 @@ def normalize_header(header,header_keywords):
 def text_segmentation(job_offer_details):
     #headers
     header_keywords = {
-        'job_description': ['job description', 'description'],
-        'skills': ['skills', 'required skills'],
-        'preferred_candidate': ['preferred candidate', 'candidate profile'],
-        'company': ['company', 'about the company']
+        'description': ['Job description','job description', 'description'],
+        'competences': ['Competences','competences','skills', 'required skills'],
     }
 
     # Flatten all possible headers
@@ -54,18 +71,18 @@ def access_bayt(driver):
     )
     search_input.clear()
     search_input.send_keys("DATA" + Keys.RETURN)
-def extract_job_details(driver:webdriver,offers=[]):
+def extract_job_details(driver:webdriver):
     try:
-        job_title = driver.find_element(By.CSS_SELECTOR, "h2#jobViewJobTitle").text.strip()
-        #print("The Job title found is: ", job_title)
+        titre = driver.find_element(By.CSS_SELECTOR, "h2#jobViewJobTitle").text.strip()
+        #print("The Job title found is: ", titre)
     except NoSuchElementException:
-        job_title = ""
+        titre = ""
 
     try:
-        company_name = driver.find_element(By.CSS_SELECTOR, "#view_inner > div > div.toggle-head.z-hi.u-sticky-m.bg-inverse.bb-m > div.row.is-m.no-wrap.v-align-center.p10t > div > b > a").text.strip()
-        #print("The company name found is: ", company_name)
+        companie = driver.find_element(By.CSS_SELECTOR, "#view_inner > div > div.toggle-head.z-hi.u-sticky-m.bg-inverse.bb-m > div.row.is-m.no-wrap.v-align-center.p10t > div > b > a").text.strip()
+        #print("The company name found is: ", companie)
     except NoSuchElementException:
-        company_name = ""
+        companie = ""
 
     try:
         job_details=driver.find_element(By.CSS_SELECTOR, "div.u-scrolly.t-small").text.strip()
@@ -74,12 +91,13 @@ def extract_job_details(driver:webdriver,offers=[]):
     except NoSuchElementException:
         job_details = ""
     offer={
-        "job_title": job_title,
-        "company_name": company_name,
+        "titre": titre,
+        "companie": companie,
+        "via": "Bayt",
         }
     offer|=job_details
-    offers.append(offer)
-    return offers
+    
+    return offer
 
 def find_number_of_pages(driver:webdriver.Chrome):
     try:
@@ -112,6 +130,10 @@ def change_page(driver:webdriver.Chrome,num_pages:int):
 
 
 def access_job_offer(driver : webdriver.Chrome):
+    try:
+        data=json.load(open("offres_emploi_bayt.json", "r", encoding="utf-8"))
+    except FileNotFoundError:   
+        data=[]
     job_offers= WebDriverWait(driver, 10).until(
             EC.presence_of_all_elements_located((By.CSS_SELECTOR, "ul.media-list.in-card > li.has-pointer-d"))
             )
@@ -123,12 +145,32 @@ def access_job_offer(driver : webdriver.Chrome):
             job_offers= WebDriverWait(driver, 10).until(
             EC.presence_of_all_elements_located((By.CSS_SELECTOR, "ul.media-list.in-card > li.has-pointer-d"))
             )
+            
             job_offer=job_offers[i]
+            try:
+                date_publication=job_offer.find_element(By.CSS_SELECTOR, "div.jb-date.col.p0x.p0t.t-mute > span").text.strip()
+                date_publication=extract_date_from_text(date_publication)
+            except Exception as e:
+                print("Error while extracting date: ", e)   
+                date_publication=""            
+               
+            job_url={"job_url":job_offer.find_element(By.CSS_SELECTOR, "a").get_attribute("href")}
+            check_duplicate(offers,job_url["job_url"])
             highlight(job_offer)
             driver.execute_script("arguments[0].scrollIntoView();", job_offer)
             time.sleep(0.5)
             job_offer.click()
-            offers=extract_job_details(driver,offers)
+            offer=extract_job_details(driver)
+            offer|=job_url
+            offer["date_publication"]=date_publication
+            try:
+                validate_json(offer)
+                if check_duplicate(offers,offer["job_url"])!=True:
+                    offers.append(offer)
+            except Exception as e: 
+                print("Erreur de validation JSON :", e)
+                continue
+            offers.append(offer)
             WebDriverWait(driver, 15).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "span.icon.is-times.has-pointer.t-mute.m0"))).click()
         except (ElementClickInterceptedException, ElementNotInteractableException, NoSuchElementException) as e:

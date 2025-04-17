@@ -3,7 +3,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 import json
-import time
+from jsonschema import validate, ValidationError
 current_path = os.path.abspath(__file__)
 current_dir= os.path.dirname(current_path)
 
@@ -42,3 +42,12 @@ def save_json(data, filename="offres_emploi.json"):
     with open(json_filename, "w", encoding="utf-8") as js_file:
         json.dump(data, js_file, ensure_ascii=False, indent=4)
     print(f"Les informations ont été enregistrées dans {json_filename}.")
+    
+def validate_json(data, schema_path=os.path.join(current_dir, "Job_schema.json")):
+    with open(schema_path) as f:
+        schema = json.load(f)
+    try:
+        validate(data, schema)
+        print("Valid JSON")
+    except ValidationError as e:
+        print("Invalid JSON:", e.message)

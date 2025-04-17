@@ -9,7 +9,8 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
-from selenium_init import init_driver
+
+from selenium_init import *
 
 # Chargement des offres déjà collectées (si le fichier existe)
 output_filename = "emplois_ma_data_ai_ml_debug.json"
@@ -18,6 +19,7 @@ if os.path.exists(output_filename):
         existing_jobs = json.load(f)
 else:
     existing_jobs = []
+
 
 # Création d'un ensemble des dates de publication déjà présentes
 existing_publication_dates = {job["publication_date"] for job in existing_jobs if "publication_date" in job and job["publication_date"]}

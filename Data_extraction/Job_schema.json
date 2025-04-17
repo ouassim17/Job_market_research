@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "properties": {
+    "job_url": { "type": "string" },
+    "title": { "type": "string" },
+    "company": { "type": "string" },
+    "description": { "type": "string" },
+    "niveau_etudes": { "type": "string" },
+    "niveau_experience": { 
+      "type": ["string", "null"]
+    },
+    "contrat": { "type": "string" },
+    "region": { "type": "string" },
+    "competences": { "type": "array", "items": { "type": "string" } },
+    "secteur": { "type": "string" },
+    "salaire": { "type": "integer" },
+    "domaine": { "type": "string" },
+    "via": { "type": "string" },
+    "publication_date": { "type": "string", "format": "date" }
+  },
+  "required": ["job_url", "title", "via", "publication_date"]
+}

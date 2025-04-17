@@ -3,6 +3,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 import json
+
 from jsonschema import validate, ValidationError
 current_path = os.path.abspath(__file__)
 current_dir= os.path.dirname(current_path)
@@ -36,24 +37,33 @@ def highlight(element, effect_time=0.1, color="yellow", border="2px solid red",a
         driver.execute_script(
             f"arguments[0].setAttribute('style', arguments[1]);", element, original_style
         )
-def save_json(data, filename="offres_emploi.json"):
+def save_json(data:list, filename="default.json"):
     # --- Sauvegarde locale en JSON (pour vérification) ---
-    json_filename = filename
-    with open(json_filename, "w", encoding="utf-8") as js_file:
-        json.dump(data, js_file, ensure_ascii=False, indent=4)
-    print(f"Les informations ont été enregistrées dans {json_filename}.")
+    existing_data = []
+    try:
+        if os.path.exists(filename):
+            with open(filename, "r", encoding="utf-8") as js_file:
+                existing_data = json.load(js_file)
+    except FileNotFoundError as e:
+        print(f"Error finding file, creating new one")
+        json.dump
+    with open(filename, "w", encoding="utf-8") as js_file:
+        
+        merged_data = existing_data + data
+        print(f'Saving {len(merged_data)} jobs to {filename}, {len(data)} new jobs')
+        json.dump(merged_data, js_file, ensure_ascii=False, indent=4)
     
 def validate_json(data, schema_path=os.path.join(current_dir, "Job_schema.json")):
     with open(schema_path) as f:
         schema = json.load(f)
     try:
         validate(data, schema)
-        print("Valid JSON")
     except ValidationError as e:
         print("Invalid JSON:", e.message)
 def check_duplicate(data, job_url):
     # Check if the job URL already exists in the data
-    for job in data:
+    for job in data[:][:]:
         if job.get("job_url") == job_url:
+            print(f"Duplicate found: {job_url}")
             return True
     return False

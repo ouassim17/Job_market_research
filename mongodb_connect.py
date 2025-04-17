@@ -1,8 +1,7 @@
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
 import os
-from dotenv import load_dotenv
-    
+from dotenv import load_dotenv   
 # --- Insertion dans MongoDB ---
 try:
     load_dotenv()

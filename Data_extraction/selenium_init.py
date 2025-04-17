@@ -51,3 +51,9 @@ def validate_json(data, schema_path=os.path.join(current_dir, "Job_schema.json")
         print("Valid JSON")
     except ValidationError as e:
         print("Invalid JSON:", e.message)
+def check_duplicate(data, job_url):
+    # Check if the job URL already exists in the data
+    for job in data:
+        if job.get("job_url") == job_url:
+            return True
+    return False

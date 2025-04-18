@@ -22,7 +22,7 @@ def init_driver(executable_path=os.path.dirname(current_dir) + "\chromedriver-wi
     driver.implicitly_wait(2)  # Time before the program exits in case of exception in seconds, will not wait if the program runs normally
     
     return driver
-def highlight(element, effect_time=1.5, color="yellow", border="2px solid red", active=True):
+def highlight(element, effect_time=0.1, color="yellow", border="2px solid red", active=True):
     if active:
         driver = element._parent  
         original_style = element.get_attribute("style")

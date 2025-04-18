@@ -7,7 +7,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException, TimeoutException, WebDriverException
-from selenium_init import init_driver
+from selenium_init import *
 
 OUTPUT_FILENAME = "offres_marocannonces.json"
 
@@ -35,8 +35,8 @@ def extract_offers(driver):
             location = holder.find_element(By.CLASS_NAME, "location").text.strip()
             offer = {
                 "titre": job_title,
-                "localisation": location,
-                "url": job_url
+                "region": location,
+                "job_url": job_url
             }
             offers_list.append(offer)
         except NoSuchElementException as e:
@@ -54,33 +54,30 @@ def parse_details_text(text):
     lines = [line.strip() for line in text.split("\n") if line.strip()]
     
     if len(lines) >= 2:
-        details["titre_detail"] = lines[0]
-        details["localisation_detail"] = lines[1]
+        details["titre"] += lines[0]
+        details["region"] += lines[1]
     
     for line in lines:
         if line.startswith("Publiée le:"):
-            details["date_publication"] = line.replace("Publiée le:", "").strip()
-        elif line.startswith("Vue:"):
-            details["vues"] = line.replace("Vue:", "").strip()
-        elif line.startswith("Annonce N°:"):
-            details["annonce_no"] = line.replace("Annonce N°:", "").strip()
+            details["publication_date"] = line.replace("Publiée le:", "").strip()
+        
     
     text_joined = "\n".join(lines)
     intro_match = re.search(r"Annonce N°:.*\n(.*?)\nMissions :", text_joined, re.DOTALL)
     if intro_match:
-        details["description_intro"] = intro_match.group(1).strip()
+        details["description"] = intro_match.group(1).strip()
     
     missions_match = re.search(r"Missions\s*:\s*\n(.*?)\nProfil requis\s*:", text_joined, re.DOTALL)
     if missions_match:
         missions = [m.strip("- ").strip() for m in missions_match.group(1).split("\n") if m.strip()]
-        details["missions"] = missions
+        details["extra"] = missions
     
     profil_match = re.search(r"Profil requis\s*:\s*\n(.*?)(Domaine\s*:|$)", text_joined, re.DOTALL)
     if profil_match:
         profil_lines = [p.strip("- ").strip() for p in profil_match.group(1).split("\n") if p.strip()]
-        details["profil_requis"] = profil_lines
+        details["extra"] += profil_lines
 
-    fields = ["Domaine", "Fonction", "Contrat", "Entreprise", "Salaire", "Niveau d'études", "Ville"]
+    fields = ["Domaine", "Fonction", "Contrat", "companie", "Salaire", "Niveau_etudes", "Ville"]
     for field in fields:
         pattern = r"{} *: *(.*)".format(field)
         match = re.search(pattern, text_joined)
@@ -90,14 +87,14 @@ def parse_details_text(text):
     try:
         annon_index = lines.index("Annonceur :")
         if annon_index + 1 < len(lines):
-            details["annonceur"] = lines[annon_index + 1]
+            details["extra"] += lines[annon_index + 1]
     except ValueError:
         pass
     
     try:
         tel_index = lines.index("Téléphone :")
         if tel_index + 1 < len(lines):
-            details["téléphone"] = lines[tel_index + 1]
+            details["extra"] += lines[tel_index + 1]
     except ValueError:
         pass
 
@@ -127,18 +124,11 @@ def extract_offer_details(driver, offer_url):
     
     return details
 
-def save_json(data, filename=OUTPUT_FILENAME):
-    """
-    Sauvegarde les données extraites dans un fichier JSON.
-    """
-    with open(filename, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
-    print(f"Données sauvegardées dans {filename}")
-
 def main():
     # Chargement des offres existantes
     existing_offers = load_existing_offers(OUTPUT_FILENAME)
     # Création d'un ensemble des dates de publication déjà présentes
+    existing_urls= {job["job_url"] for job in existing_offers if "job_url" in job and job["job_url"]}
     existing_pub_dates = {job["date_publication"] for job in existing_offers if "date_publication" in job and job["date_publication"]}
     
     driver = init_driver()  # Initialisation du driver (mode headless si configuré)
@@ -175,8 +165,12 @@ def main():
     
     new_offers = []  # Stockera uniquement les nouvelles offres
     for offer in all_offers:
-        offer_url = offer.get("url")
-        if offer_url:
+        offer_url = offer.get("job_url")
+        if offer_url in existing_urls:
+            print(f"Offre déjà existante détectée : {offer_url}, passage à la suivante.")
+            continue
+        elif offer_url:
+            # Accéder à l'URL de l'offre pour extraire les détails
             print(f"Extraction des détails de l'offre : {offer_url}")
             details = extract_offer_details(driver, offer_url)
             offer.update(details)
@@ -185,7 +179,12 @@ def main():
             if pub_date and pub_date in existing_pub_dates:
                 print(f"Offre existante détectée (date: {pub_date}), non ajoutée.")
                 continue
-            new_offers.append(offer)
+            try:
+                validate_json(offer)  # Valider la structure JSON de l'offre
+                new_offers.append(offer)
+            except Exception as e:
+                print(f"Erreur de validation JSON pour l'offre {offer_url}: {e}")
+                continue
             # Mettre à jour l'ensemble pour éviter d'ajouter plusieurs offres avec la même date
             if pub_date:
                 existing_pub_dates.add(pub_date)

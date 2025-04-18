@@ -5,10 +5,9 @@
 /venv/
 
 
-*.json
 
 
 *.log
 
-
+*pyc
 *.env

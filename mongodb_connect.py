@@ -2,6 +2,7 @@ import json
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 import os
+<<<<<<< HEAD:Data_extraction/mongodb_connect.py
 from dotenv import load_dotenv
 
 # Charger les variables d'environnement
@@ -54,3 +55,23 @@ with open("normalized_jobs.json", "w", encoding="utf-8") as f:
 
 client.close()
 
+=======
+from dotenv import load_dotenv   
+# --- Insertion dans MongoDB ---
+try:
+    load_dotenv()
+    uri = os.environ.get("MONGO_DB_URI")
+    client = MongoClient(uri, tls=True, tlsAllowInvalidCertificates=False, server_api=ServerApi('1'))
+    db = client["DXC"]
+    collection = db["rekrute"]
+    
+    if data:
+        result = collection.insert_many(data)
+        print(f"{len(result.inserted_ids)} documents insérés dans MongoDB.")
+    else:
+        print("Aucune donnée à insérer dans MongoDB.")
+except Exception as e:
+    print("Erreur lors de l'insertion dans MongoDB :", e)
+finally:
+    client.close()
+>>>>>>> e9e7d3c905b645611098e85e73dcc5997c708b51:mongodb_connect.py

@@ -7,7 +7,11 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException, TimeoutException, WebDriverException
+<<<<<<< HEAD
 from selenium_init import highlight, init_driver
+=======
+from selenium_init import init_driver
+>>>>>>> e9e7d3c905b645611098e85e73dcc5997c708b51
 
 OUTPUT_FILENAME = "offres_marocannonces.json"
 
@@ -26,11 +30,17 @@ def extract_offers(driver):
     offers_list = []
     holders = driver.find_elements(By.CSS_SELECTOR, "li:not(.adslistingpos) div.holder")
     print(f"Offres trouvées sur cette page : {len(holders)}")
+<<<<<<< HEAD
    
     
     for holder in holders:
         try:
             highlight(holder)
+=======
+    
+    for holder in holders:
+        try:
+>>>>>>> e9e7d3c905b645611098e85e73dcc5997c708b51
             a_tag = holder.find_element(By.XPATH, "./..")
             job_url = a_tag.get_attribute("href")
             job_title = holder.find_element(By.TAG_NAME, "h3").text.strip()
@@ -40,7 +50,10 @@ def extract_offers(driver):
                 "localisation": location,
                 "url": job_url
             }
+<<<<<<< HEAD
            
+=======
+>>>>>>> e9e7d3c905b645611098e85e73dcc5997c708b51
             offers_list.append(offer)
         except NoSuchElementException as e:
             print(f"Élément non trouvé dans l'offre principale : {e}")
@@ -118,9 +131,13 @@ def extract_offer_details(driver, offer_url):
         used_cars_container = WebDriverWait(driver, 15).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "div.used-cars"))
         )
+<<<<<<< HEAD
         
         details_text = used_cars_container.text.strip()
        # Met en surbrillance le conteneur utilisé
+=======
+        details_text = used_cars_container.text.strip()
+>>>>>>> e9e7d3c905b645611098e85e73dcc5997c708b51
         parsed_details = parse_details_text(details_text)
         details.update(parsed_details)
     except TimeoutException:

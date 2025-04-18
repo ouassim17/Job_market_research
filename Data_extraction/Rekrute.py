@@ -5,26 +5,16 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
-from selenium_init import init_driver
+from selenium_init import *
 import time
-def highlight(element, effect_time=1, color="yellow", border="2px solid red",active=True):
-    if active:
-        """Highlights (blinks) a Selenium WebDriver element."""
-        driver = element._parent  
-        original_style = element.get_attribute("style")
-        highlight_style = f"background: {color}; border: {border};"
 
-        driver.execute_script(
-            f"arguments[0].setAttribute('style', arguments[1]);", element, highlight_style
-        )
-        import time
-        time.sleep(effect_time)
-        driver.execute_script(
-            f"arguments[0].setAttribute('style', arguments[1]);", element, original_style
-        )
 
 # --- Fonction d'extraction des offres sur la page courante ---
 def extract_offers():
+    try:
+        data=json.load(open("offres_emploi_rekrute.json", "r", encoding="utf-8"))
+    except FileNotFoundError:   
+        data=[]
     offers_list = []
     
     holders = driver.find_elements(By.CSS_SELECTOR, "div.holder")
@@ -36,68 +26,69 @@ def extract_offers():
         except NoSuchElementException:
             info_divs = []
 
-        Job_title = ""
+        titre = ""
         try:
             parent_div = holder.find_element(By.XPATH, './ancestor::div[1]')
 
-            job_title = parent_div.find_element(By.CSS_SELECTOR, 'a.titreJob')
-            job_url= job_title.get_attribute("href")
-            highlight(job_title)
-            Job_title = job_title.text.strip()
+            titre = parent_div.find_element(By.CSS_SELECTOR, 'a.titreJob')
+            job_url= titre.get_attribute("href")
+            if check_duplicate(data,job_url)==True:
+                continue
+            highlight(titre)
+            titre = titre.text.strip()
 
         # 1. Récupérer les prerequis du poste 
         except NoSuchElementException:
-            Job_title = ""
+            titre = ""
 
-        required_skills = ""
+        competences = ""
         if len(info_divs) >= 1:
             try:
                 field = holder.find_element(By.CSS_SELECTOR, 'i.fa.fa-search')
                 highlight(field)
                 parent_div = field.find_element(By.XPATH, './ancestor::div[1]')
                 highlight(parent_div)
-                required_skills = parent_div.find_element(By.TAG_NAME, "span").text.strip()
+                competences = parent_div.find_element(By.TAG_NAME, "span").text.strip()
             except NoSuchElementException:
-                required_skills = ""
+                competences = ""
         # 2. Récupérer la description de la societe
-        comp_desc = ""
+        companie = ""
         if len(info_divs) >= 2:
             try:
                 field = holder.find_element(By.CSS_SELECTOR, 'i.fa.fa-industry')
                 highlight(field)
                 parent_div = field.find_element(By.XPATH, './ancestor::div[1]')
                 highlight(parent_div)
-                comp_desc = parent_div.find_element(By.TAG_NAME, "span").text.strip()
+                companie = parent_div.find_element(By.TAG_NAME, "span").text.strip()
                 
             except NoSuchElementException:
-                comp_desc = ""
+                companie = ""
         
         
         # 3. Récupérer la description de la mission
-        mission = ""
+        description = ""
         if len(info_divs) >= 2:
             try:
                 field = holder.find_element(By.CSS_SELECTOR, 'i.fa.fa-binoculars')
                 highlight(field)
                 parent_div = field.find_element(By.XPATH, './ancestor::div[1]')
                 highlight(parent_div)
-                mission = parent_div.find_element(By.TAG_NAME, "span").text.strip()
+                description = parent_div.find_element(By.TAG_NAME, "span").text.strip()
             except NoSuchElementException:
-                mission = ""
+                description = ""
         # 4. Récupérer les dates de publication et le nombre de postes (<em class="date">)
-        pub_start = pub_end = postes = ""
+        pub_start=""
         try:
             date_elem = holder.find_element(By.CSS_SELECTOR, "em.date")
             highlight(date_elem)
             spans = date_elem.find_elements(By.TAG_NAME, "span")
             pub_start = spans[0].text.strip() if len(spans) > 0 else ""
-            pub_end = spans[1].text.strip() if len(spans) > 1 else ""
-            postes = spans[2].text.strip() if len(spans) > 2 else ""
+            
         except NoSuchElementException:
             pass
         
         # 5. Récupérer les détails complémentaires (dernière div.info contenant une liste <li>)
-        secteur = fonction = experience = niveau = contrat = ""
+        secteur = secteur = niveau_experience = niveau_etudes = contrat = ""
         if len(info_divs) >= 3:
             try:
                 details_div = info_divs[-1]
@@ -108,39 +99,40 @@ def extract_offers():
                     if "Secteur d'activité" in txt:
                         secteur = txt.split(":", 1)[1].strip()
                     elif "Fonction" in txt:
-                        fonction = txt.split(":", 1)[1].strip()
+                        secteur = txt.split(":", 1)[1].strip()
                     elif "Expérience requise" in txt:
-                        experience = txt.split(":", 1)[1].strip()
+                        niveau_experience = txt.split(":", 1)[1].strip()
                     elif "Niveau d'étude demandé" in txt:
-                        niveau = txt.split(":", 1)[1].strip()
+                        niveau_etudes = txt.split(":", 1)[1].strip()
                     elif "Type de contrat proposé" in txt:
                         contrat = txt.split(":", 1)[1].strip()
             except Exception:
                 pass
         
         offer = {
-            "job_title": Job_title,
-            "required_skills": required_skills,
-            "company_description": comp_desc,
-            "mission": mission,
-            "publication_start": pub_start,
-            "publication_end": pub_end,
-            "postes": postes,
-            "secteur": secteur,
-            "fonction": fonction,
-            "experience": experience,
-            "niveau": niveau,
-            "type_contrat": contrat,
-            "url": job_url
+            "titre": titre,
+            "publication_date": pub_start,
+            "competences":competences,
+            "companie":companie,
+            "description":description,
+            "secteur":secteur,
+            "niveau_experience":niveau_experience,
+            "niveau_etudes":niveau_etudes,
+            "contrat":contrat,
+            "via":"Rekrute",
+            "job_url": job_url,  
         }
-        offers_list.append(offer)
+        try: 
+            validate_json(offer)
+            if check_duplicate(data,offer["job_url"])!=True:
+                offers_list.append(offer)
+
+        except Exception as e:
+            print("Erreur de validation JSON :", e)
+            continue
+        
     return offers_list
-def save_json(data, filename="offres_emploi.json"):
-    # --- Sauvegarde locale en JSON (pour vérification) ---
-    json_filename = filename
-    with open(json_filename, "w", encoding="utf-8") as js_file:
-        json.dump(data, js_file, ensure_ascii=False, indent=4)
-    print(f"Les informations ont été enregistrées dans {json_filename}.")
+
 def access_rekrute(driver):
     
     # Accéder à la page de base
@@ -201,14 +193,8 @@ try:
     access_rekrute(driver)
     print("Accès à la page de recherche réussi.")
     page_urls=get_pages_url(driver)
-    print("les urls extraits: ",page_urls)
-   
-    print("Extraction des offres sur la page actuelle...")
     change_page(driver,page_urls,data)
-    
-    save_json(data, filename="offres_emploi_rekrute.json")
-    
-            
+    save_json(data, filename="offres_emploi_rekrute.json")          
 except Exception as e:
     print("Erreur lors de l'extraction :", e)
 finally:

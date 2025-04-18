@@ -193,7 +193,6 @@ try:
     access_rekrute(driver)
     print("Accès à la page de recherche réussi.")
     page_urls=get_pages_url(driver)
-    print("les urls extraits: ",page_urls)
     change_page(driver,page_urls,data)
     save_json(data, filename="offres_emploi_rekrute.json")          
 except Exception as e:

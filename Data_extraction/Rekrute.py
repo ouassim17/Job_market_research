@@ -10,7 +10,7 @@ import time
 
 
 # --- Fonction d'extraction des offres sur la page courante ---
-def extract_offers():
+def extract_offers(driver):
     try:
         data=json.load(open("offres_emploi_rekrute.json", "r", encoding="utf-8"))
     except FileNotFoundError:   
@@ -181,25 +181,25 @@ def change_page(driver, page_url):
         WebDriverWait(driver, 15).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "div.holder"))
             )
-            
-try:
-    # --- Initialisation du driver Chrome ---
-    driver = init_driver()
-    data = []  # Liste qui contiendra toutes les offres
-    access_rekrute(driver)
-    print("Accès à la page de recherche réussi.")
-    page_urls=get_pages_url(driver)
-    for url in page_urls:
-        change_page(driver,url)
-        data.extend(extract_offers())
-        print("Page traitée, total offres cumulées :", len(data))
-    # Boucle pour parcourir toutes les pages
-except Exception as e:
-    print("Erreur lors de l'extraction :", e)
-finally:
-    driver.quit()
-    save_json(data, filename="offres_emploi_rekrute.json")          
-    print("Extraction terminée !")
+def main():
+    try:
+        # --- Initialisation du driver Chrome ---
+        driver = init_driver()
+        data = []  # Liste qui contiendra toutes les offres
+        access_rekrute(driver)
+        print("Accès à la page de recherche réussi.")
+        page_urls=get_pages_url(driver)
+        for url in page_urls:
+            change_page(driver,url)
+            data.extend(extract_offers(driver))
+            print("Page traitée, total offres cumulées :", len(data))
+        # Boucle pour parcourir toutes les pages
+    except Exception as e:
+        print("Erreur lors de l'extraction :", e)
+    finally:
+        driver.quit()
+        save_json(data, filename="offres_emploi_rekrute.json")          
+        print("Extraction terminée !")
 
 
-
+main()

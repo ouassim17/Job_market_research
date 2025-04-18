@@ -136,7 +136,7 @@ def change_page(driver:webdriver.Chrome,num_pages:int):
         return False
 
 
-def access_job_offer(driver : webdriver.Chrome):
+def extract_job_details(driver : webdriver.Chrome):
     try:
         data=json.load(open("offres_emploi_bayt.json", "r", encoding="utf-8"))
     except FileNotFoundError:   
@@ -192,29 +192,28 @@ def access_job_offer(driver : webdriver.Chrome):
             continue
     return offers
         
-def extract_job_offers(driver:webdriver.Chrome):
+        
+def main():
+    # Initialiser le driver 
+    driver=init_driver()
     try:
         data=[]
         # Accéder à la page de base
         access_bayt(driver)
-        
         # Accéder aux offres d'emploi
         num_pages = find_number_of_pages(driver)
         current_page= 1
-        # Changer de page si nécessaire
         while change_page(driver,num_pages):
             print("Going to page with url: ", driver.current_url)
-            data.extend(access_job_offer(driver)) 
+            data.extend(extract_job_details(driver)) 
             print(f"Page number {current_page} done, cumulated offers: ", len(data))
             current_page += 1
         print("All pages done.")
-    
     except Exception as e:
-        print("An error occurred:", e)
+        print("An error occurred during extraction:", e)
     finally:
+        driver.quit()
         save_json(data, filename="offres_emploi_bayt.json")
         print("Extraction terminée!")
         
-driver=init_driver()
-extract_job_offers(driver)
-driver.quit()
+main()

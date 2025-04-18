@@ -22,21 +22,51 @@ def init_driver(executable_path=os.path.dirname(current_dir) + "\chromedriver-wi
     driver.implicitly_wait(2)  # Time before the program exits in case of exception in seconds, will not wait if the program runs normally
     
     return driver
-def highlight(element, effect_time=0.1, color="yellow", border="2px solid red",active=True):
+def highlight(element, effect_time=1.5, color="yellow", border="2px solid red", active=True):
     if active:
-        """Highlights (blinks) a Selenium WebDriver element."""
         driver = element._parent  
         original_style = element.get_attribute("style")
-        highlight_style = f"background: {color}; border: {border};"
 
+        # Inject pulse animation CSS into the page
+        driver.execute_script("""
+            if (!document.getElementById('pulse-style')) {
+                const style = document.createElement('style');
+                style.id = 'pulse-style';
+                style.innerHTML = `
+                    @keyframes pulse {
+                        0% {
+                            box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7);
+                        }
+                        70% {
+                            box-shadow: 0 0 0 10px rgba(255, 0, 0, 0);
+                        }
+                        100% {
+                            box-shadow: 0 0 0 0 rgba(255, 0, 0, 0);
+                        }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        """)
+
+        # Apply highlight + pulse animation
+        highlight_style = f"background: {color}; border: {border}; animation: pulse 1s infinite;"
         driver.execute_script(
-            f"arguments[0].setAttribute('style', arguments[1]);", element, highlight_style
+            "arguments[0].setAttribute('style', arguments[1]);", element, highlight_style
         )
+
         import time
         time.sleep(effect_time)
+
+        # Scroll smoothly to center
+        driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", element)
+
+        # Remove animation and restore original style
         driver.execute_script(
-            f"arguments[0].setAttribute('style', arguments[1]);", element, original_style
+            "arguments[0].setAttribute('style', arguments[1]);", element, original_style
         )
+
+        
 def save_json(data:list, filename="default.json"):
     # --- Sauvegarde locale en JSON (pour vérification) ---
     existing_data = []

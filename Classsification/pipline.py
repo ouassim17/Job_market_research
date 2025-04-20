@@ -82,7 +82,7 @@ Traiter et homogénéiser le titre de chaque offre en générant un champ 'titre
 
 Déduire le 'secteur' d'activité à partir du titre et de la description (par exemple, 'Informatique', 'Data', 'Cloud', etc.).
 
-Déterminer le 'niveau_qualification' sous forme d'un entier de 1 à 5 (où 1 correspond à un niveau Bac et 5 à un niveau Doctorat), en se basant sur les informations du niveau d'études et de l'expérience indiqués dans les offres.
+Déterminer le 'niveau_d'etude' sous forme d'un entier de 1 à 5 (où 1 correspond à un niveau Bac et 5 à un niveau Doctorat), en se basant sur les informations du niveau d'études et de l'expérience indiqués dans les offres.
 
 Ajouter, si nécessaire, d'autres colonnes pertinentes pour garantir que les données finales soient propres, claires et cohérentes, tout en conservant la structure de base des données.
 

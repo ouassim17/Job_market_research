@@ -1,0 +1,4 @@
+{
+  "instruction": "Tu es un expert en RH et en analyse d'offres d'emploi. Je vais te fournir une liste d'offres extraites d'un site de recrutement. Chaque offre comporte un titre et une description. \n\nTa mission :\n1. Classifie chaque offre selon un poste normalisé (ex. : 'Développeur Full Stack', 'Analyste Data', etc.).\n2. Crée un dictionnaire de correspondance entre les intitulés de poste (titre brut) et leur version normalisée.\n3. Tu peux utiliser à la fois le titre et la description pour mieux comprendre le rôle.\n\nRetourne un JSON sous ce format :\n[\n  {\n    \"titre_original\": \"...\",\n    \"titre_normalisé\": \"...\",\n    \"secteur\": \"...\",\n    \"niveau_qualification\": \"...\"\n  },\n  ...\n],\n\"dictionnaire_titres\": {\n  \"titre_original\": \"titre_normalisé\",\n  ...\n}\n\nVoici les offres :",
+  "offres": []
+}

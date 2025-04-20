@@ -1,0 +1,33 @@
+{
+    "id": "chatcmpl-a626c0f7-8467-4cf9-a40a-6b357b5fe485",
+    "object": "chat.completion",
+    "created": 1744154729,
+    "model": "llama-3.3-70b-versatile",
+    "choices": [
+        {
+            "index": 0,
+            "message": {
+                "role": "assistant",
+                "content": "Voici le code Python pour normaliser et extraire les informations clés de chaque offre d'emploi :\n\n```python\nimport json\n\n# Liste des offres d'emploi\noffres_emploi = [...]  # Insérez la liste des offres d'emploi ici\n\n# Fonction pour normaliser les offres d'emploi\ndef normaliser_offre(offer):\n    normalized_offer = {\n        \"job_url\": offer.get(\"job_url\", \"\"),\n        \"title\": offer.get(\"title\", \"\"),\n        \"company\": offer.get(\"company\", \"\"),\n        \"description\": offer.get(\"description\", \"\"),\n        \"niveau_etudes\": offer.get(\"niveau_etudes\", \"\"),\n        \"niveau_experience\": offer.get(\"niveau_experience\", \"\"),\n        \"contrat\": offer.get(\"contrat\", \"\"),\n        \"region\": offer.get(\"region\", \"\"),\n        \"competences\": offer.get(\"competences\", \"\"),\n        \"publication_date\": offer.get(\"publication_date\", \"\"),\n        \"secteur\": \"\",  # Sécteur par défaut\n        \"niveau_qualification\": \"\"  # Niveau de qualification par défaut\n    }\n\n    # Déterminer le secteur en fonction de la description de l'offre\n    if \"informatique\" in normalized_offer[\"description\"].lower() or \"IT\" in normalized_offer[\"description\"].upper():\n        normalized_offer[\"secteur\"] = \"Informatique\"\n    elif \"banque\" in normalized_offer[\"description\"].lower() or \"finances\" in normalized_offer[\"description\"].lower():\n        normalized_offer[\"secteur\"] = \"Banque et Finances\"\n    elif \"gestion\" in normalized_offer[\"description\"].lower() or \"administration\" in normalized_offer[\"description\"].lower():\n        normalized_offer[\"secteur\"] = \"Gestion et Administration\"\n    else:\n        normalized_offer[\"secteur\"] = \"Autres\"\n\n    # Déterminer le niveau de qualification en fonction du niveau d'études et d'expérience\n    if \"Bac+5\" in normalized_offer[\"niveau_etudes\"] or \"Expérience > 10 ans\" in normalized_offer[\"niveau_experience\"]:\n        normalized_offer[\"niveau_qualification\"] = \"Senior\"\n    elif \"Bac+3\" in normalized_offer[\"niveau_etudes\"] or \"Expérience entre 5 ans et 10 ans\" in normalized_offer[\"niveau_experience\"]:\n        normalized_offer[\"niveau_qualification\"] = \"Confirmé\"\n    else:\n        normalized_offer[\"niveau_qualification\"] = \"Junior\"\n\n    return normalized_offer\n\n# Normaliser les offres d'emploi\nnormalized_offers = [normaliser_offre(offer) for offer in offres_emploi]\n\n# Afficher les offres normalisées sous forme de liste d'objets JSON\nprint(json.dumps(normalized_offers, indent=4, ensure_ascii=False))\n```\n\nCe code définit une fonction `normaliser_offre` pour normaliser chaque offre d'emploi en extrayant les informations clés et en les organisant dans un dictionnaire. La fonction détermine également le secteur et le niveau de qualification en fonction de la description de l'offre.\n\nEnsuite, le code applique cette fonction à chaque offre d'emploi dans la liste `offres_emploi` pour obtenir une liste d'objets JSON normalisés.\n\nNotez que le résultat peut ne pas être parfait et nécessiter des ajustements en fonction des spécificités des offres d'emploi et des critères de normalisation attendus."
+            },
+            "logprobs": null,
+            "finish_reason": "stop"
+        }
+    ],
+    "usage": {
+        "queue_time": 0.19535837,
+        "prompt_tokens": 6238,
+        "prompt_time": 0.449153118,
+        "completion_tokens": 744,
+        "completion_time": 2.7054545450000003,
+        "total_tokens": 6982,
+        "total_time": 3.154607663
+    },
+    "usage_breakdown": {
+        "models": null
+    },
+    "system_fingerprint": "fp_3f3b593e33",
+    "x_groq": {
+        "id": "req_01jrbvj6p1fhq9mw15kgkzfbvf"
+    }
+}

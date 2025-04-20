@@ -10,7 +10,7 @@ import time
 
 
 # --- Fonction d'extraction des offres sur la page courante ---
-def extract_offers():
+def extract_offers(driver):
     try:
         data=json.load(open("offres_emploi_rekrute.json", "r", encoding="utf-8"))
     except FileNotFoundError:   
@@ -170,36 +170,36 @@ def get_pages_url(driver):
         print("Pagination select non trouvée. Utilisation d'une seule page.", e)
         page_urls = []
     return page_urls
-def change_page(driver, page_urls,data):
-    if page_urls:
-        # On ignore la première option puisque c'est la page actuelle déjà traitée
-        for url in page_urls:
-            
-            # Si l'URL est relative, on complète avec le domaine
-            if not url.startswith("http"):
-                url = "https://www.rekrute.com" + url
-                print("accessing the url: ", url)
-            print("Navigation vers la page :", url)
-            driver.get(url)
-            WebDriverWait(driver, 15).until(
+def change_page(driver, page_url):
+    if page_url:
+        # Si l'URL est relative, on complète avec le domaine
+        if not page_url.startswith("http"):
+            page_url = "https://www.rekrute.com" + page_url
+            print("accessing the page url: ", page_url)
+        print("Navigation vers la page :", page_url)
+        driver.get(page_url)
+        WebDriverWait(driver, 15).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "div.holder"))
             )
-            data.extend(extract_offers())
+def main():
+    try:
+        # --- Initialisation du driver Chrome ---
+        driver = init_driver()
+        data = []  # Liste qui contiendra toutes les offres
+        access_rekrute(driver)
+        print("Accès à la page de recherche réussi.")
+        page_urls=get_pages_url(driver)
+        for url in page_urls:
+            change_page(driver,url)
+            data.extend(extract_offers(driver))
             print("Page traitée, total offres cumulées :", len(data))
-try:
-    # --- Initialisation du driver Chrome ---
-    driver = init_driver()
-    data = []  # Liste qui contiendra toutes les offres
-    access_rekrute(driver)
-    print("Accès à la page de recherche réussi.")
-    page_urls=get_pages_url(driver)
-    change_page(driver,page_urls,data)
-    save_json(data, filename="offres_emploi_rekrute.json")          
-except Exception as e:
-    print("Erreur lors de l'extraction :", e)
-finally:
-    driver.quit()
-    print("Extraction terminée !")
+        # Boucle pour parcourir toutes les pages
+    except Exception as e:
+        print("Erreur lors de l'extraction :", e)
+    finally:
+        driver.quit()
+        save_json(data, filename="offres_emploi_rekrute.json")          
+        print("Extraction terminée !")
 
 
-
+main()

@@ -1,11 +1,10 @@
 import json
-from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, NoSuchElementException
-from selenium_init import *
+from selenium.common.exceptions import NoSuchElementException
+from selenium_init import init_driver, highlight, save_json, validate_json, check_duplicate
 import time
 
 
@@ -32,7 +31,7 @@ def extract_offers(driver):
 
             titre = parent_div.find_element(By.CSS_SELECTOR, 'a.titreJob')
             job_url= titre.get_attribute("href")
-            if check_duplicate(data,job_url)==True:
+            if check_duplicate(data,job_url):
                 continue
             highlight(titre)
             titre = titre.text.strip()
@@ -124,7 +123,7 @@ def extract_offers(driver):
         }
         try: 
             validate_json(offer)
-            if check_duplicate(data,offer["job_url"])!=True:
+            if not check_duplicate(data,offer["job_url"]):
                 offers_list.append(offer)
 
         except Exception as e:

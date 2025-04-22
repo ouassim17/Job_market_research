@@ -74,8 +74,8 @@ def save_json(data:list, filename="default.json"):
         if os.path.exists(filename):
             with open(filename, "r", encoding="utf-8") as js_file:
                 existing_data = json.load(js_file)
-    except FileNotFoundError as e:
-        print(f"Error finding file, creating new one")
+    except FileNotFoundError:
+        print("Error finding file, creating new one")
         json.dump
     with open(filename, "w", encoding="utf-8") as js_file:
         

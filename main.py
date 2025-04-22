@@ -62,5 +62,5 @@ def run_data_extraction_scripts():
 if __name__ == "__main__":
     print("Début de l'extraction des données...")
     total = run_data_extraction_scripts()
-    print(f"\nTous les scripts d'extraction ont été traités!")
+    print("\nTous les scripts d'extraction ont été traités!")
     print(f"Nombre total d'offres extraites: {total}")

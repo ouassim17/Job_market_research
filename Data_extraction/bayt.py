@@ -1,14 +1,19 @@
+from jsonschema import ValidationError
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException,ElementClickInterceptedException,ElementNotInteractableException
-from selenium_init import *
+from selenium_init import init_driver, highlight, save_json, validate_json, check_duplicate
 import datetime
 import time
 import re
+<<<<<<< HEAD
 
+=======
+import json
+>>>>>>> 0b418b30e0e420f670f5056d388067e3e86fcf74
 def extract_date_from_text(text):
     text = text.lower().strip()
     if "yesterday" in text:
@@ -137,7 +142,7 @@ def change_page(driver:webdriver.Chrome,num_pages:int):
         return False
 
 
-def extract_job_details(driver : webdriver.Chrome):
+def extract_job_info(driver : webdriver.Chrome):
     try:
         data=json.load(open("offres_emploi_bayt.json", "r", encoding="utf-8"))
     except FileNotFoundError:   
@@ -163,7 +168,7 @@ def extract_job_details(driver : webdriver.Chrome):
                 date_publication=""            
                
             job_url=job_offer.find_element(By.CSS_SELECTOR, "a").get_attribute("href")
-            if check_duplicate(data,job_url)==True:
+            if check_duplicate(data,job_url):
                 print("Duplicate found, skipping.")
                 continue
             highlight(job_offer)
@@ -184,7 +189,7 @@ def extract_job_details(driver : webdriver.Chrome):
                 continue
             WebDriverWait(driver, 15).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "span.icon.is-times.has-pointer.t-mute.m0"))).click()
-        except (ElementClickInterceptedException, ElementNotInteractableException, NoSuchElementException) as e:
+        except (ElementClickInterceptedException, ElementNotInteractableException, NoSuchElementException):
             print("An error occurred while clicking on the job offer")
             if driver.current_url != current_url:
                 print("Url changed, going back.")
@@ -206,7 +211,7 @@ def main():
         current_page= 1
         while change_page(driver,num_pages):
             print("Going to page with url: ", driver.current_url)
-            data.extend(extract_job_details(driver)) 
+            data.extend(extract_job_info(driver)) 
             print(f"Page number {current_page} done, cumulated offers: ", len(data))
             current_page += 1
         print("All pages done.")

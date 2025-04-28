@@ -1,14 +1,13 @@
 import json
-from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, NoSuchElementException
-from selenium_init import *
+from selenium.common.exceptions import NoSuchElementException
+from selenium_init import init_driver, highlight, save_json, validate_json, check_duplicate, setup_logger
 import time
 
-
+logger=setup_logger()
 # --- Fonction d'extraction des offres sur la page courante ---
 def extract_offers(driver):
     try:
@@ -18,7 +17,8 @@ def extract_offers(driver):
     offers_list = []
     
     holders = driver.find_elements(By.CSS_SELECTOR, "div.holder")
-    print("Offres trouvées sur cette page :", len(holders)-1)
+    
+    ("Offres trouvées sur cette page :", len(holders)-1)
     
     for holder in holders[1:]:  # Ignorer le premier conteneur qui est un filtre
         try:
@@ -32,7 +32,7 @@ def extract_offers(driver):
 
             titre = parent_div.find_element(By.CSS_SELECTOR, 'a.titreJob')
             job_url= titre.get_attribute("href")
-            if check_duplicate(data,job_url)==True:
+            if check_duplicate(data,job_url):
                 continue
             highlight(titre)
             titre = titre.text.strip()
@@ -124,11 +124,12 @@ def extract_offers(driver):
         }
         try: 
             validate_json(offer)
-            if check_duplicate(data,offer["job_url"])!=True:
+            if not check_duplicate(data,offer["job_url"]):
                 offers_list.append(offer)
 
         except Exception as e:
-            print("Erreur de validation JSON :", e)
+            logger.exception(f"Erreur de validation JSON : {e}")
+            
             continue
         
     return offers_list
@@ -163,11 +164,11 @@ def get_pages_url(driver):
         )
         page_options = pagination.find_elements(By.TAG_NAME, "option")
         total_pages = len(page_options)
-        print("Nombre total de pages :", total_pages)
+        logger.info(f"Nombre total de pages :{total_pages}")
         page_urls = [url.get_attribute("value") for url in page_options]
 
     except Exception as e:
-        print("Pagination select non trouvée. Utilisation d'une seule page.", e)
+        logger.exception(f"Pagination select non trouvée. Utilisation d'une seule page: {e}")
         page_urls = []
     return page_urls
 def change_page(driver, page_url):
@@ -175,31 +176,35 @@ def change_page(driver, page_url):
         # Si l'URL est relative, on complète avec le domaine
         if not page_url.startswith("http"):
             page_url = "https://www.rekrute.com" + page_url
-            print("accessing the page url: ", page_url)
-        print("Navigation vers la page :", page_url)
+            logger.info(f"accessing the page url: {page_url}")
+        logger.info(f"Navigation vers la page : {page_url}")
         driver.get(page_url)
         WebDriverWait(driver, 15).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "div.holder"))
             )
+
 def main():
+    logger.info("Début de l'extraction des offres d'emploi sur Rekrute")
+    start_time = time.time()
     try:
         # --- Initialisation du driver Chrome ---
         driver = init_driver()
         data = []  # Liste qui contiendra toutes les offres
         access_rekrute(driver)
-        print("Accès à la page de recherche réussi.")
+        logger.info("Accès à la page de recherche réussi.")
         page_urls=get_pages_url(driver)
-        for url in page_urls:
-            change_page(driver,url)
+        for page_number in range(1, len(page_urls)+1):
+
+            change_page(driver, page_urls[page_number-1])
             data.extend(extract_offers(driver))
-            print("Page traitée, total offres cumulées :", len(data))
+            logger.info(f"Page {page_number} traitée, total offres cumulées :{len(data)}")
         # Boucle pour parcourir toutes les pages
     except Exception as e:
-        print("Erreur lors de l'extraction :", e)
+        logger.exception(f"Erreur lors de l'extraction :{e}")
     finally:
         driver.quit()
         save_json(data, filename="offres_emploi_rekrute.json")          
-        print("Extraction terminée !")
+        logger.info(f"Extraction terminée en {time.time() - start_time} secondes.")
 
 
 main()

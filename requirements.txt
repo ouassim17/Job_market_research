@@ -15,6 +15,8 @@ dotenv==0.9.9
 h11==0.14.0
 idna==3.10
 Jinja2==3.1.6
+jsonschema==4.23.0
+jsonschema-specifications==2024.10.1
 langcodes==3.5.0
 language_data==1.3.0
 marisa-trie==1.2.1
@@ -33,8 +35,10 @@ Pygments==2.19.1
 pymongo==4.11.3
 PySocks==1.7.1
 python-dotenv==1.1.0
+referencing==0.36.2
 requests==2.32.3
 rich==13.9.4
+rpds-py==0.24.0
 selenium==4.30.0
 shellingham==1.5.4
 smart-open==7.1.0
@@ -51,6 +55,7 @@ trio-websocket==0.12.2
 typer==0.15.2
 typing_extensions==4.13.0
 urllib3==2.3.0
+uv==0.6.16
 wasabi==1.1.3
 weasel==0.4.1
 websocket-client==1.8.0

@@ -1248,6 +1248,22 @@
         "job_url": "https://www.rekrute.com/offre-emploi-accountant---general-accounts-cdd-contract-recrutement-air-arabia-casablanca-169197.html"
     },
     {
+<<<<<<< HEAD
+=======
+        "titre": "Finance Planning & Analysis | Casablanca (Maroc)",
+        "publication_date": "03/03/2025",
+        "competences": "• master’s degree in finance or equivalent / business management • minimum 2 years’ experience in a similar role experience • demonstrated analytical and financial modeling skills with ability to prepare materials and presentations that communicate meaningful data and analyses. • ability to prioritize workload and build an organization operational oriented: site fp&a should be a business partner for operational • bilingual (french-english)",
+        "companie": "Sitel Group devient officiellement Foundever™. Foundever™ est un leader mondial de l'expérience client (CX). Avec 170 000 collaborateurs dans le monde, nous sommes l’équipe...",
+        "description": "Directly related to the FP&A Morocco Manager, the FP&A participates in the reporting and analysis of the financial data of Foundever Morocco, intervening in the following topics: • Prepare, review and distribute monthly financial reports and...",
+        "secteur": "Call Centers (métiers de) , Gestion / Comptabilité / Finance",
+        "niveau_experience": "De 1 à 3 ans",
+        "niveau_etudes": "Bac +5 et plus",
+        "contrat": "CDI - Télétravail : Non",
+        "via": "Rekrute",
+        "job_url": "https://www.rekrute.com/offre-emploi-finance-planning-analysis-recrutement-foundever-ex-sitel-group-casablanca-168750.html"
+    },
+    {
+>>>>>>> 41d0dc3066849d46892113d2c526202b7f36dcfb
         "titre": "Stagiaire PFE DATA Analyst (Convention obligatoire) | Casablanca (Maroc)",
         "publication_date": "28/02/2025",
         "competences": "- master en data.",
@@ -1350,5 +1366,21 @@
         "contrat": "CDI - Télétravail : Non",
         "via": "Rekrute",
         "job_url": "https://www.rekrute.com/offre-emploi-industrial-data-analyst-sap-power-bi-recrutement-relats-maroc-tanger-168791.html"
+<<<<<<< HEAD
+=======
+    },
+    {
+        "titre": "Submit Your Spontaneous Application and Join Stellantis ! | Casablanca (Maroc)",
+        "publication_date": "19/02/2025",
+        "competences": "• project management • validation, integration and testing • calibration • design and simulation • vehicle architecture / safety • data, bi, ai, cybersecurity • manufacturing • supply chain",
+        "companie": "Stellantis is a leading global automaker and mobility provider that offers clean, connected, affordable and safe mobility solutions. Our Company’s strength lies in the breadth of our iconic brand portfolio, the diversity and passion of our people, and...",
+        "description": "We are seeking passionate professionals in the automotive industry with strong expertise in engineering and software development to support the continuous growth and innovation of our company. As we navigate an era of rapid technological advancements, we...",
+        "secteur": "Gestion projet / Etudes / R&D , Méthodes / Process / Industrialisation",
+        "niveau_experience": "De 3 à 5 ans - De 5 à 10 ans",
+        "niveau_etudes": "Bac +5 et plus",
+        "contrat": "CDI - Télétravail : Non",
+        "via": "Rekrute",
+        "job_url": "https://www.rekrute.com/offre-emploi-submit-your-spontaneous-application-and-join-stellantis-recrutement-stellantis-casablanca-168605.html"
+>>>>>>> 41d0dc3066849d46892113d2c526202b7f36dcfb
     }
 ]

@@ -8,6 +8,7 @@ import requests
 from dotenv import load_dotenv
 from collections import Counter
 
+# Configuration des logs
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -29,13 +30,23 @@ def load_json(file_path):
         exit(1)
 
 def prepare_offer(offer):
+    # Nettoyage des secteurs
+    secteur = offer.get("secteur", "")
+    secteur = re.sub(r'\s*,\s*', ',', secteur)  # Suppression des espaces autour des virgules
+    secteur = list(set(secteur.split(','))) if secteur else []
+    
+    # Normalisation des compétences
+    competences = offer.get("competences", "").lower()
+    competences = re.sub(r'[-+]', ' ', competences)  # Suppression des tirets
+    competences = [c.strip() for c in competences.split(',') if c.strip()]
+    
     return {
         "title": offer.get("titre", ""),
         "description": offer.get("description", ""),
-        "secteur": offer.get("secteur", ""),
+        "secteur": secteur,
         "niveau_etudes": offer.get("niveau_etudes", ""),
         "niveau_experience": offer.get("niveau_experience", ""),
-        "competences": offer.get("competences", ""),
+        "competences": competences,
         "domaine": offer.get("domaine", "")
     }
 
@@ -47,15 +58,37 @@ def clean_response(response_text):
         json_segment = match[0] or match[1]
         try:
             data = json.loads(json_segment)
+            valid_data = []
             for entry in data:
+                if not isinstance(entry, dict):
+                    logging.error(f"Format incorrect: {entry}")
+                    continue
+                # Vérification des clés obligatoires
+                required_keys = ["is_data_profile", "niveau_etudes", "niveau_experience", "competences_techniques", "profile"]
+                if not all(key in entry for key in required_keys):
+                    logging.error(f"Clés manquantes: {entry}")
+                    continue
+                
+                # Conversion des types
                 entry["is_data_profile"] = int(entry.get("is_data_profile", 0))
                 entry["niveau_etudes"] = int(entry.get("niveau_etudes", 0))
                 entry["niveau_experience"] = int(entry.get("niveau_experience", 0))
+                
+                # Nettoyage des compétences
                 entry["competences_techniques"] = [
-                    c.strip() for c in entry.get("competences_techniques", []) if c.strip()
+                    c.strip().capitalize() 
+                    for c in entry.get("competences_techniques", []) 
+                    if c.strip()
                 ]
+                
+                # Validation du profil
                 entry["profile"] = entry.get("profile", "NONE").upper()
-            return data
+                if entry["profile"] not in ["BI", "DATA SCIENCE", "DATA ENGINEERING", "DATA ANALYST", "NONE"]:
+                    entry["profile"] = "NONE"
+                    logging.warning(f"Profil invalide: {entry['profile']}")
+                
+                valid_data.append(entry)
+            return valid_data
         except (json.JSONDecodeError, TypeError):
             logging.error(f"Erreur JSON: {json_segment[:500]}")
     return []
@@ -67,31 +100,23 @@ def process_with_groq(batch):
     system_prompt = """
     TU ES UN EXPERT EN ANALYSE DE POSTES DE DONNÉES. TA MISSION :
     1. Détermine si le poste est lié aux données (1) ou non (0)
-    2. Si c'est un profil data, catégorise en :
-       - BI (outils: Power BI, Tableau, SQL Server)
-       - DATA SCIENCE (Python, R, Machine Learning)
-       - DATA ENGINEERING (Apache Spark, Hadoop, SQL)
-       - DATA ANALYST (Excel, SQL, Data Visualization)
+    2. Si data_profile=1, catégorise en :
+       - BI (Power BI/Tableau/SQL)
+       - DATA ENGINEERING (Spark/Hadoop/Cloud)
+       - DATA SCIENCE (Python/R/ML)
+       - DATA ANALYST (Excel/SQL/Analytics)
     3. Normalise le niveau d'études (0-5)
-    4. Normalise l'expérience en années (ex: "3-5 ans" → 4)
-    5. Extrait les compétences techniques (outils/technos)
+    4. Normalise l'expérience (ex: "5-10 ans" → 10)
     
     Format de réponse : JSON ARRAY avec les clés:
-    is_data_profile (0/1),
-    niveau_etudes (0-5),
-    niveau_experience (0-20),
-    competences_techniques (array),
-    profile (BI/DATA SCIENCE/DATA ENGINEERING/DATA ANALYST)
+    is_data_profile, niveau_etudes, niveau_experience, competences_techniques, profile
     """
     
     user_message = "\n\n".join([
         f"Titre: {o['title']}\n"
-        f"Description: {o['description']}\n"
-        f"Secteur: {o['secteur']}\n"
-        f"Domaine: {o['domaine']}\n"
-        f"Niveau études: {o['niveau_etudes']}\n"
-        f"Expérience: {o['niveau_experience']}\n"
-        f"Compétences: {o['competences']}"
+        f"Description: {o['description'][:1000]}\n"  # Limite à 1000 caractères
+        f"Secteur: {', '.join(o['secteur'])}\n"
+        f"Compétences: {', '.join(o['competences'])}\n"
         for o in batch
     ])
     
@@ -128,79 +153,93 @@ def process_with_groq(batch):
         except (KeyError, json.JSONDecodeError) as e:
             logging.error(f"Réponse API invalide: {str(e)}")
             return []
-        except Exception as e:
-            logging.error(f"Erreur inattendue: {str(e)}")
-            return []
     
     return []
 
 def normalize_etudes(value):
     mapping = {
         "": 0,
-        "Bac": 1,
-        "Bac +2": 2,
-        "Bac +3": 3,
-        "Bac +4": 4,
-        "Bac +5 et plus": 5
+        "bac": 1,
+        "bac+2": 2,
+        "bac+3": 3,
+        "bac+4": 4,
+        "bac+5 et plus": 5
     }
-    return mapping.get(value, 0)
+    return mapping.get(value.lower().strip(), 0)
 
 def normalize_experience(value):
     if not value:
         return 0
-    numbers = re.findall(r'\d+', value)
+    numbers = re.findall(r'\d+', value.replace('-', ' ').replace('à', ' '))
     if numbers:
-        return sum(map(int, numbers)) // len(numbers)
+        return max(map(int, numbers))
     return 0
 
 def main():
     input_file = "merged_jobs.json"
     output_file = "processed_jobs_demon.json"
     
-    
     data = load_json(input_file)
     batches = [data[i:i+2] for i in range(0, len(data), 2)]  # Lots de 2 offres
     
     results = []
-    request_counter = 0  # Compteur de requêtes
+    request_counter = 0
     
     for i, batch in enumerate(batches, 1):
-        logging.info(f"Traitements lot {i}/{len(batches)}")
+        logging.info(f"Traitements lot {i}/{len(batches)} - {len(batch)} offres")
         
-        # Gestion du cooldown après chaque 5 requêtes
+        # Gestion du cooldown
         if request_counter % 5 == 0 and request_counter != 0:
             logging.info("Cooldown de 30 secondes après 5 requêtes...")
             time.sleep(30)
         
         processed = process_with_groq([prepare_offer(o) for o in batch])
-        # ... reste du code de traitement ...
         
-        request_counter += 1  # Incrémentation après chaque requête
+        if not processed:
+            continue
         
+        # Fusion des données originales et traitées
+        for original, updated in zip(batch, processed):
+            original.update({
+                "is_data_profile": updated["is_data_profile"],
+                "niveau_etudes_normalized": normalize_etudes(original["niveau_etudes"]),
+                "experience_years": normalize_experience(original["niveau_experience"]),
+                "competences_techniques": updated["competences_techniques"],
+                "profile": updated.get("profile", "NONE").upper()
+            })
+            results.append(original)
+        
+        request_counter += 1
         time.sleep(3)  # Pause courte entre les lots
     
     # Statistiques avancées
     competence_counts = Counter()
+    profile_counts = Counter()
+    
     for offer in results:
         competence_counts.update(offer["competences_techniques"])
+        profile_counts.update([offer["profile"]])
     
     output = {
         "metadata": {
             "processed_at": datetime.now().isoformat(),
             "total_processed": len(results),
             "data_profile_count": sum(1 for o in results if o["is_data_profile"] == 1),
-            "profile_distribution": {
-                "BI": sum(1 for o in results if o["profile"] == "BI"),
-                "DATA SCIENCE": sum(1 for o in results if o["profile"] == "DATA SCIENCE"),
-                "DATA ENGINEERING": sum(1 for o in results if o["profile"] == "DATA ENGINEERING"),
-                "DATA ANALYST": sum(1 for o in results if o["profile"] == "DATA ANALYST")
-            }
+            "profile_distribution": dict(profile_counts)
         },
         "results": results,
         "stats": {
-            "etudes_dist": Counter([o["niveau_etudes_normalized"] for o in results]),
-            "experience_dist": Counter([o["experience_years"] for o in results]),
-            "competences_pop": [{" ".join(k.split()[:3]): v} for k, v in competence_counts.most_common(10)]
+            "etudes_dist": Counter([
+                normalize_etudes(o["niveau_etudes"]) for o in results
+            ]),
+            "experience_dist": Counter([
+                o["experience_years"] for o in results
+            ]),
+            "competences_pop": [
+                {" ".join(k.split()[:3]): v} 
+                for k, v in competence_counts.most_common(15)
+                if v >= 2
+            ]
         }
     }
     

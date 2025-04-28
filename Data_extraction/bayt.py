@@ -20,13 +20,20 @@ def extract_date_from_text(text):
         else:
             days=None
     elif "days ago" in text:
-        match=re.search(r"(\d+)\s*days\s*ago", text)
+        match=re.search(r"(\d+)\+\s*days\s*ago", text)
         if match:
             days=int(match.group(1))
         else:
             days=None
+    elif "hours ago" in text:
+        match=re.search(r"(\d+)\s*hours\s*ago", text)
+        if match:
+            days=int(match.group(1))/24
+
+        else:
+            days=None
     date_publication=datetime.datetime.now()-datetime.timedelta(days=days)
-    return date_publication.strftime("%Y-%m-%d")
+    return date_publication.strftime("%d-m-%Y")
 
 def normalize_header(header,header_keywords):
     header = header.lower().strip()
@@ -130,7 +137,7 @@ def change_page(driver:webdriver.Chrome,num_pages:int):
         return False
 
 
-def access_job_offer(driver : webdriver.Chrome):
+def extract_job_details(driver : webdriver.Chrome):
     try:
         data=json.load(open("offres_emploi_bayt.json", "r", encoding="utf-8"))
     except FileNotFoundError:   
@@ -155,23 +162,26 @@ def access_job_offer(driver : webdriver.Chrome):
                 print("Error while extracting date: ", e)   
                 date_publication=""            
                
-            job_url={"job_url":job_offer.find_element(By.CSS_SELECTOR, "a").get_attribute("href")}
-            check_duplicate(offers,job_url["job_url"])
+            job_url=job_offer.find_element(By.CSS_SELECTOR, "a").get_attribute("href")
+            if check_duplicate(data,job_url)==True:
+                print("Duplicate found, skipping.")
+                continue
             highlight(job_offer)
             driver.execute_script("arguments[0].scrollIntoView();", job_offer)
             time.sleep(0.5)
             job_offer.click()
             offer=extract_job_details(driver)
-            offer|=job_url
-            offer["date_publication"]=date_publication
+            offer["job_url"]=job_url
+            offer["publication_date"]=date_publication
             try:
                 validate_json(offer)
-                if check_duplicate(offers,offer["job_url"])!=True:
-                    offers.append(offer)
-            except Exception as e: 
-                print("Erreur de validation JSON :", e)
+                offers.append(offer)
+            except ValidationError as e:
+                print("JSON invalide:", e.message)
                 continue
-            offers.append(offer)
+            except Exception as e: 
+                print("Erreur lors de validation JSON :", e)
+                continue
             WebDriverWait(driver, 15).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "span.icon.is-times.has-pointer.t-mute.m0"))).click()
         except (ElementClickInterceptedException, ElementNotInteractableException, NoSuchElementException) as e:
@@ -183,29 +193,28 @@ def access_job_offer(driver : webdriver.Chrome):
             continue
     return offers
         
-def extract_job_offers(driver:webdriver.Chrome):
+        
+def main():
+    # Initialiser le driver 
+    driver=init_driver()
     try:
         data=[]
         # Accéder à la page de base
         access_bayt(driver)
-        
         # Accéder aux offres d'emploi
         num_pages = find_number_of_pages(driver)
         current_page= 1
-        # Changer de page si nécessaire
         while change_page(driver,num_pages):
             print("Going to page with url: ", driver.current_url)
-            data.extend(access_job_offer(driver)) 
+            data.extend(extract_job_details(driver)) 
             print(f"Page number {current_page} done, cumulated offers: ", len(data))
             current_page += 1
         print("All pages done.")
-    
     except Exception as e:
-        print("An error occurred:", e)
+        print("An error occurred during extraction:", e)
     finally:
+        driver.quit()
         save_json(data, filename="offres_emploi_bayt.json")
         print("Extraction terminée!")
         
-driver=init_driver()
-extract_job_offers(driver)
-driver.quit()
+main()

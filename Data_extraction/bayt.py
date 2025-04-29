@@ -5,11 +5,12 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException,ElementClickInterceptedException,ElementNotInteractableException
-from selenium_init import init_driver, highlight, save_json, validate_json, check_duplicate
+from selenium_init import init_driver, highlight, save_json, validate_json, check_duplicate,setup_logger
 import datetime
 import time
 import re
 import json
+logger=setup_logger()
 def extract_date_from_text(text):
     text = text.lower().strip()
     if "yesterday" in text:
@@ -83,20 +84,20 @@ def access_bayt(driver):
 def extract_job_details(driver:webdriver):
     try:
         titre = driver.find_element(By.CSS_SELECTOR, "h2#jobViewJobTitle").text.strip()
-        #print("The Job title found is: ", titre)
+        
     except NoSuchElementException:
         titre = ""
 
     try:
         companie = driver.find_element(By.CSS_SELECTOR, "#view_inner > div > div.toggle-head.z-hi.u-sticky-m.bg-inverse.bb-m > div.row.is-m.no-wrap.v-align-center.p10t > div > b > a").text.strip()
-        #print("The company name found is: ", companie)
+        
     except NoSuchElementException:
         companie = ""
 
     try:
         job_details=driver.find_element(By.CSS_SELECTOR, "div.u-scrolly.t-small").text.strip()
         job_details=text_segmentation(job_details)
-        #print("Job details are:" ,job_details)
+        
     except NoSuchElementException:
         job_details = ""
     offer={
@@ -114,10 +115,10 @@ def find_number_of_pages(driver:webdriver.Chrome):
             EC.presence_of_element_located((By.CSS_SELECTOR, "ul.pagination li.pagination-last-d a"))
         )
         num_of_pages = num_of_pages.get_attribute("href").split("page=")[1]
-        print("Number of pages found : ", num_of_pages)
+        logger.info(f"Number of pages found :  {num_of_pages}")
         return int(num_of_pages)
     except TimeoutException:
-        print("Couldnt find number of pages.")
+        logger.exception("Couldnt find number of pages.")
         
 def change_page(driver:webdriver.Chrome,num_pages:int):
     try:
@@ -131,10 +132,10 @@ def change_page(driver:webdriver.Chrome,num_pages:int):
             WebDriverWait(driver,10).until(EC.url_to_be(url))
             return True
         except TimeoutException:
-            print("No more pages to load.")
+            logger.exception("No more pages to load.")
             return False
     else:
-        print("No more pages to load.")
+        logger.info("No more pages to load.")
         return False
 
 
@@ -148,7 +149,7 @@ def extract_job_info(driver : webdriver.Chrome):
             )
     offers = []
     current_url= driver.current_url
-    print("Found {} job offers.".format(len(job_offers)))
+    logger.info(f"Found {len(job_offers)} job offers.")
     for i in range(len(job_offers)):
         try:
             job_offers= WebDriverWait(driver, 10).until(
@@ -160,12 +161,11 @@ def extract_job_info(driver : webdriver.Chrome):
                 date_publication=job_offer.find_element(By.CSS_SELECTOR, "div.jb-date.col.p0x.p0t.t-mute > span").text.strip()
                 date_publication=extract_date_from_text(date_publication)
             except Exception as e:
-                print("Error while extracting date: ", e)   
+                logger.exception("Error while extracting date: ", e)   
                 date_publication=""            
                
             job_url=job_offer.find_element(By.CSS_SELECTOR, "a").get_attribute("href")
             if check_duplicate(data,job_url):
-                print("Duplicate found, skipping.")
                 continue
             highlight(job_offer)
             driver.execute_script("arguments[0].scrollIntoView();", job_offer)
@@ -178,17 +178,17 @@ def extract_job_info(driver : webdriver.Chrome):
                 validate_json(offer)
                 offers.append(offer)
             except ValidationError as e:
-                print("JSON invalide:", e.message)
+                logger.error("JSON invalide:", e.message)
                 continue
             except Exception as e: 
-                print("Erreur lors de validation JSON :", e)
+                logger.exception("Erreur lors de validation JSON :", e)
                 continue
             WebDriverWait(driver, 15).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "span.icon.is-times.has-pointer.t-mute.m0"))).click()
         except (ElementClickInterceptedException, ElementNotInteractableException, NoSuchElementException):
-            print("An error occurred while clicking on the job offer")
+            logger.exception("An error occurred while clicking on the job offer")
             if driver.current_url != current_url:
-                print("Url changed, going back.")
+                
                 driver.get(current_url)
                 WebDriverWait(driver, 5).until(EC.url_to_be(current_url))
             continue
@@ -196,9 +196,12 @@ def extract_job_info(driver : webdriver.Chrome):
         
         
 def main():
+    start_time = time.time()
+    
+    logger.info("Début de l'extraction des offres d'emploi sur Bayt.com")
     # Initialiser le driver 
-    driver=init_driver()
     try:
+        driver=init_driver()
         data=[]
         # Accéder à la page de base
         access_bayt(driver)
@@ -206,16 +209,19 @@ def main():
         num_pages = find_number_of_pages(driver)
         current_page= 1
         while change_page(driver,num_pages):
-            print("Going to page with url: ", driver.current_url)
+            logger.info("Going to page with url: ", driver.current_url)
             data.extend(extract_job_info(driver)) 
-            print(f"Page number {current_page} done, cumulated offers: ", len(data))
+            logger.info(f"Page number {current_page} done, cumulated offers: ", len(data))
             current_page += 1
-        print("All pages done.")
+        logger.info("All pages done.")
     except Exception as e:
-        print("An error occurred during extraction:", e)
+        logger.exception("An error occurred during extraction:", e)
     finally:
         driver.quit()
-        save_json(data, filename="offres_emploi_bayt.json")
-        print("Extraction terminée!")
-        
-main()
+        save_json(data, filename="offres_emploi_bayt.json")       
+        logger.info(f"Nouvelles offres extraites : {len(data)}")   
+        logger.info(f"Extraction terminée en {time.time() - start_time} secondes.")
+        return data
+
+if __name__ == "__main__":       
+    main()

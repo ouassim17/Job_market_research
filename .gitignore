@@ -11,3 +11,5 @@
 
 *pyc
 *.env
+*.json
+*.lock

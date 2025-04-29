@@ -648,7 +648,6 @@
         "contrat": "CDI - Télétravail : Hybride",
         "via": "Rekrute",
         "job_url": "https://www.rekrute.com/offre-emploi-data-analyst-recrutement-orange-business-rabat-169157.html"
-<<<<<<< HEAD
     },
     {
         "titre": "Staffing Specialist | Casablanca (Maroc)",
@@ -1535,8 +1534,6 @@
         "job_url": "https://www.rekrute.com/offre-emploi-accountant---general-accounts-cdd-contract-recrutement-air-arabia-casablanca-169197.html"
     },
     {
-<<<<<<< HEAD
-=======
         "titre": "Finance Planning & Analysis | Casablanca (Maroc)",
         "publication_date": "03/03/2025",
         "competences": "• master’s degree in finance or equivalent / business management • minimum 2 years’ experience in a similar role experience • demonstrated analytical and financial modeling skills with ability to prepare materials and presentations that communicate meaningful data and analyses. • ability to prioritize workload and build an organization operational oriented: site fp&a should be a business partner for operational • bilingual (french-english)",
@@ -1550,7 +1547,6 @@
         "job_url": "https://www.rekrute.com/offre-emploi-finance-planning-analysis-recrutement-foundever-ex-sitel-group-casablanca-168750.html"
     },
     {
->>>>>>> 41d0dc3066849d46892113d2c526202b7f36dcfb
         "titre": "Stagiaire PFE DATA Analyst (Convention obligatoire) | Casablanca (Maroc)",
         "publication_date": "28/02/2025",
         "competences": "- master en data.",
@@ -1653,8 +1649,6 @@
         "contrat": "CDI - Télétravail : Non",
         "via": "Rekrute",
         "job_url": "https://www.rekrute.com/offre-emploi-industrial-data-analyst-sap-power-bi-recrutement-relats-maroc-tanger-168791.html"
-<<<<<<< HEAD
-=======
     },
     {
         "titre": "Submit Your Spontaneous Application and Join Stellantis ! | Casablanca (Maroc)",
@@ -1668,8 +1662,44 @@
         "contrat": "CDI - Télétravail : Non",
         "via": "Rekrute",
         "job_url": "https://www.rekrute.com/offre-emploi-submit-your-spontaneous-application-and-join-stellantis-recrutement-stellantis-casablanca-168605.html"
->>>>>>> 41d0dc3066849d46892113d2c526202b7f36dcfb
-=======
->>>>>>> 0b418b30e0e420f670f5056d388067e3e86fcf74
+    },
+    {
+        "titre": "Compliance Analyst - Ad-monitoring - Remote/Hybrid - Casablanca | Casablanca (Royaume-Uni)",
+        "publication_date": "28/04/2025",
+        "competences": "• strong communication skills in english. any level in other languages is a considerable advantage. • desirable but not necessary previous experience working in tech, business, marketing or finance. • interest in the mobile and technology industries • degree level education awarded from a recognised higher education institution • good networker and open to talk to clients and prospects/new clients • trustworthy candidate to professionally handle sensitive and confidential data concerning our clients. • collaborative team player who can blend into the culture of empello which is open and multi-cultural • knowledge of microsoft office, especially powerpoint and excel as well as google gmail, google drive and google sheets.",
+        "companie": "Empello is an ad-monitoring and cybersecurity company based in London, United Kingdom. We are offering the opportunity to join our vibrant, international, and rapidly growing adtech company. In the role, you will be seeking out and assessing mobile...",
+        "description": "Responsibilities: • Analyse and assess advertising on mobile internet and in social media and apps • Manage client relationships providing a high quality service • Develop a deep understanding and knowledge of the managed market(s) •...",
+        "secteur": "Télécoms / Réseaux",
+        "niveau_experience": "Débutant - De 1 à 3 ans",
+        "niveau_etudes": "Bac",
+        "contrat": "Freelance - Télétravail : Hybride",
+        "via": "Rekrute",
+        "job_url": "https://www.rekrute.com/offre-emploi-compliance-analyst---ad-monitoring---remotehybrid---casablanca-recrutement-empello-casablanca-171071.html"
+    },
+    {
+        "titre": "DATA ANALYST | Casablanca (Maroc)",
+        "publication_date": "28/04/2025",
+        "competences": "environnement technique : python/excel datavisualisation : powerbi",
+        "companie": "Présent depuis 1997 au Maroc, Manpower Group est un acteur international incontournable de l’emploi et de l’insertion sociale dans le monde. Au sein du Royaume Chérifien, nous couvrons l’ensemble du territoire, de...",
+        "description": "Nous recherchons en urgence un Data Analyst  pour une mission à moyen terme évolutive à long terme avec une expérience de 3 à 5 ans. Disponibilité immédiate.",
+        "secteur": "Télécoms / Réseaux",
+        "niveau_experience": "De 3 à 5 ans",
+        "niveau_etudes": "Bac +5 et plus",
+        "contrat": "Autre - Télétravail : Non",
+        "via": "Rekrute",
+        "job_url": "https://www.rekrute.com/offre-emploi-data-analyst-recrutement-manpower-agences-casablanca-171067.html"
+    },
+    {
+        "titre": "DATA Engineer | Fès (Maroc)",
+        "publication_date": "25/04/2025",
+        "competences": "",
+        "companie": "ALTEN DELIVERY CENTER MAROC, Filiale du leader mondial de l’ingénierie et du conseil en technologie créé en 2008 et présent à Fès, Rabat, Tétouan et Casablanca, compte aujourd’hui plus de 2300...",
+        "description": "• Conception et déploiement de systèmes d'IA • Modélisation avancée pour résoudre des problèmes complexes • Réalisation des recettes des évolutions des outils •...",
+        "secteur": "Informatique / Electronique",
+        "niveau_experience": "Débutant - Moins de 1 an",
+        "niveau_etudes": "Bac +5 et plus",
+        "contrat": "CDI - Télétravail : Hybride",
+        "via": "Rekrute",
+        "job_url": "https://www.rekrute.com/offre-emploi-data-engineer-recrutement-alten-maroc-fes-171037.html"
     }
 ]

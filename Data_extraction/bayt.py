@@ -1,3 +1,4 @@
+import json
 from jsonschema import ValidationError
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -9,11 +10,6 @@ from selenium_init import init_driver, highlight, save_json, validate_json, chec
 import datetime
 import time
 import re
-<<<<<<< HEAD
-
-=======
-import json
->>>>>>> 0b418b30e0e420f670f5056d388067e3e86fcf74
 def extract_date_from_text(text):
     text = text.lower().strip()
     if "yesterday" in text:

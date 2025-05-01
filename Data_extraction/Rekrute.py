@@ -184,8 +184,9 @@ def change_page(driver, page_url):
             )
 
 def main():
-    logger.info("Début de l'extraction des offres d'emploi sur Rekrute")
     start_time = time.time()
+    
+    logger.info("Début de l'extraction des offres d'emploi sur Rekrute")
     try:
         # --- Initialisation du driver Chrome ---
         driver = init_driver()
@@ -203,8 +204,10 @@ def main():
         logger.exception(f"Erreur lors de l'extraction :{e}")
     finally:
         driver.quit()
-        save_json(data, filename="offres_emploi_rekrute.json")          
+        save_json(data, filename="offres_emploi_rekrute.json")       
+        logger.info(f"Nouvelles offres extraites : {len(data)}")   
         logger.info(f"Extraction terminée en {time.time() - start_time} secondes.")
+        return data
 
-
-main()
+if __name__ == "__main__":
+    main()

@@ -1,16 +1,18 @@
 import json
 import time
 import os
+from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 
-from selenium_init import init_driver
+from selenium_init import init_driver, setup_logger,save_json
+logger=setup_logger()
 
-# Chargement des offres déjà collectées (si le fichier existe)
-output_filename = "emplois_ma_data_ai_ml_debug.json"
+# Chargement des offres déjà collectées 
+output_filename = "offres_emploi_emploi.json"
 if os.path.exists(output_filename):
     with open(output_filename, "r", encoding="utf-8") as f:
         existing_jobs = json.load(f)
@@ -29,11 +31,9 @@ new_jobs = []
 # Ensemble pour suivre les URLs déjà collectées dans cette session (pour éviter les doublons sur cette séance)
 collected_urls = set()
 
-try:
-    # Accès à l'URL initiale pour soumettre la recherche "DATA AI ML"
-    search_url = "https://www.emploi.ma/recherche-jobs-maroc/data?f%5B0%5D=im_field_offre_metiers%3A31"
-    driver.get(search_url)
-    
+def access_emploi(driver:webdriver.Chrome):
+    # Accès à l'URL initiale pour soumettre la recherche "DATA AI ML" 
+    driver.get("https://www.emploi.ma/recherche-jobs-maroc/data?f%5B0%5D=im_field_offre_metiers%3A31")
     try:
         search_input = WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "input#keywordSearch"))
@@ -41,19 +41,22 @@ try:
         search_input.clear()
         search_input.send_keys("DATA AI ML")
         search_input.send_keys(Keys.RETURN)
-        print("Requête 'DATA AI ML' soumise.")
     except TimeoutException:
-        print("Champ de recherche introuvable, la requête ne sera pas envoyée.")
-    
-    # Attendre le chargement des résultats sur la première page
-    time.sleep(5)
-    
+        logger.exception("Champ de recherche introuvable, la requête ne sera pas envoyée.")
+
+def get_number_pages(driver:webdriver.Chrome):
+    pages=WebDriverWait(driver,10).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR,"pager-item active pagination-numbers")))
+    max_pages=int(pages[-1].find_element(By.CSS_SELECTOR,"a").text.strip())
+    return max_pages
+try:
+    access_emploi(driver)
+    max_pages=get_number_pages(driver)
     # Boucle de pagination
     page = 1
-    while True:
+    while page<=max_pages:
         # Construction de l'URL pour la page courante avec le paramètre de pagination
         url = f"https://www.emploi.ma/recherche-jobs-maroc/Data?page={page}&f%5B0%5D=im_field_offre_metiers%3A31"
-        print(f"Scraping de la page {page} : {url}")
+        logger.info(f"Scraping de la page {page} : {url}")
         driver.get(url)
         
         # Attendre que les cartes d'offres soient chargées
@@ -62,18 +65,16 @@ try:
                 EC.presence_of_all_elements_located((By.CSS_SELECTOR, "div.card.card-job"))
             )
         except TimeoutException:
-            print(f"Aucune carte trouvée sur la page {page} ou temps d'attente dépassé.")
+            logger.exception(f"Aucune carte trouvée sur la page {page} ou temps d'attente dépassé.")
             break
 
-        # Petite pause pour que la page soit pleinement rendue
-        time.sleep(3)
         
-        cards = driver.find_elements(By.CSS_SELECTOR, "div.card.card-job")
-        print(f"Nombre de cartes trouvées sur la page {page} : {len(cards)}")
+        cards = WebDriverWait(driver,3).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "div.card.card-job")))
+        logger.info(f"Nombre de cartes trouvées sur la page {page} : {len(cards)}")
         
         # Si aucune carte n'est présente, sortir de la boucle
         if not cards:
-            print("Aucune offre trouvée sur cette page, fin de la pagination.")
+            logger.warning("Aucune offre trouvée sur cette page, fin de la pagination.")
             break
 
         for index, card in enumerate(cards, start=1):
@@ -81,33 +82,33 @@ try:
             try:
                 job_url = card.get_attribute("data-href").strip() if card.get_attribute("data-href") else ""
             except Exception as e:
-                print(f"[Carte {index} - page {page}] Erreur lors de la récupération de l'URL : {e}")
+                logger.exception(f"[Carte {index} - page {page}] Erreur lors de la récupération de l'URL : {e}")
                 job_url = ""
             
             # Filtre de doublon basé sur l'URL déjà collectée durant cette session
             if job_url and job_url in collected_urls:
-                print(f"[Carte {index} - page {page}] Offre déjà collectée (même URL).")
+                logger.warning(f"[Carte {index} - page {page}] Offre déjà collectée (même URL).")
                 continue
 
             # Récupérer le titre de l'offre
             try:
                 title = card.find_element(By.CSS_SELECTOR, "h3 a").text.strip()
             except NoSuchElementException:
-                print(f"[Carte {index} - page {page}] Titre non trouvé.")
+                logger.exception(f"[Carte {index} - page {page}] Titre non trouvé.")
                 title = ""
             
             # Récupérer le nom de l'entreprise
             try:
                 company = card.find_element(By.CSS_SELECTOR, "a.card-job-company").text.strip()
             except NoSuchElementException:
-                print(f"[Carte {index} - page {page}] Nom de l'entreprise non trouvé.")
+                logger.exception(f"[Carte {index} - page {page}] Nom de l'entreprise non trouvé.")
                 company = ""
             
             # Récupérer la description
             try:
                 description = card.find_element(By.CSS_SELECTOR, "div.card-job-description p").text.strip()
             except NoSuchElementException:
-                print(f"[Carte {index} - page {page}] Description non trouvée.")
+                logger.exception(f"[Carte {index} - page {page}] Description non trouvée.")
                 description = ""
             
             # Informations complémentaires (niveau d'études, expérience, contrat, région, compétences)
@@ -147,18 +148,18 @@ try:
                         except NoSuchElementException:
                             competences = ""
             except NoSuchElementException:
-                print(f"[Carte {index} - page {page}] Section des détails complémentaires non trouvée.")
+                logger.exception(f"[Carte {index} - page {page}] Section des détails complémentaires non trouvée.")
             
             # Récupérer la date de publication
             try:
                 pub_date = card.find_element(By.CSS_SELECTOR, "time").get_attribute("datetime").strip()
             except NoSuchElementException:
-                print(f"[Carte {index} - page {page}] Date de publication non trouvée.")
+                logger.exception(f"[Carte {index} - page {page}] Date de publication non trouvée.")
                 pub_date = ""
             
             # Vérification : si la date de publication existe déjà dans le fichier, considérer l'offre comme doublon
             if pub_date and pub_date in existing_publication_dates:
-                print(f"[Carte {index} - page {page}] Offre déjà existante (date de publication identique: {pub_date}).")
+                logger.info(f"[Carte {index} - page {page}] Offre déjà existante (date de publication identique: {pub_date}).")
                 continue
             
             # Création du dictionnaire de l'offre
@@ -189,17 +190,12 @@ try:
         time.sleep(1)
 
 except Exception as e:
-    print("Erreur lors du scraping :", e)
+    logger.exception("Erreur lors du scraping :", e)
 finally:
     driver.quit()
-    print("Extraction terminée !")
+    logger.info("Extraction terminée !")
+    all_jobs = existing_jobs + new_jobs
+    save_json(all_jobs,"offres_emploi_emploi.json")
 
-print("Nombre total d'offres nouvellement extraites :", len(new_jobs))
+logger.info("Nombre total d'offres nouvellement extraites :", len(new_jobs))
 
-# Combinaison des offres existantes et des nouvelles offres
-all_jobs = existing_jobs + new_jobs
-
-# Sauvegarde des données en mode "écriture", mais en réécrivant le fichier avec les offres mises à jour
-with open(output_filename, "w", encoding="utf-8") as f:
-    json.dump(all_jobs, f, ensure_ascii=False, indent=2)
-print(f"Les données ont été sauvegardées dans {output_filename} (total des offres : {len(all_jobs)})")

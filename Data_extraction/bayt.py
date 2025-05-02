@@ -9,45 +9,52 @@ from selenium_init import init_driver, highlight, save_json, validate_json, chec
 import datetime
 import time
 import re
+import random
 import json
-logger=setup_logger()
-def extract_date_from_text(text):
-    text = text.lower().strip()
-    if "yesterday" in text:
-        days=1
-    elif "days" in text:
-        match=re.search(r"(\d+)\s*days", text)
-        if match:
-            days=int(match.group(1))
-        else:
-            days=None
-    elif "days ago" in text:
-        match=re.search(r"(\d+)\+\s*days\s*ago", text)
-        if match:
-            days=int(match.group(1))
-        else:
-            days=None
-    elif "hours ago" in text:
-        match=re.search(r"(\d+)\s*hours\s*ago", text)
-        if match:
-            days=int(match.group(1))/24
 
+
+logger=setup_logger()
+def extract_date_from_text(text:str):
+    try:
+        text = text.lower().strip()
+        
+        #Chechking for string "yesterday"
+        if (match:=re.search(r"\s*yesterday",text)):
+            days=1
+        #Chechking for string "00 days ago"
+        elif (match:=re.search(r"(\d+)\s*\+\s*days\s*ago", text)):
+            days=int(match.group(1))
+        #Chechking for string "00 days"
+        elif (match:=re.search(r"(\d+)\s*days", text)):
+            days=int(match.group(1))
+        #Chechking for string "00 hours ago"
+        elif (match:=re.search(r"(\d+)\s*hours\s*ago", text)):    
+            days=int(match.group(1))/24
+        elif (match:=re.search(r"(\d+)\s*hour\s*ago", text)):    
+            days=int(match.group(1))/24
         else:
             days=None
-    date_publication=datetime.datetime.now()-datetime.timedelta(days=days)
-    return date_publication.strftime("%d-m-%Y")
+        if days is not None:
+            date_publication=datetime.datetime.now()-datetime.timedelta(days=days)
+            return date_publication.strftime("%d-%m-%Y")
+        else:
+            logger.warning(f"Time format not recognised: {text}")
+    except Exception as e:
+        logger.warning(f"Exception during time formatting {e}")
+    
 
 def normalize_header(header,header_keywords):
     header = header.lower().strip()
     for norm, variations in header_keywords.items():
         if any(header.startswith(v) for v in variations):
             return norm
-    return header  # fallback to raw if unmatched
+    return header  
 def text_segmentation(job_offer_details):
     #headers
     header_keywords = {
         'description': ['Job description','job description', 'description'],
         'competences': ['Competences','competences','skills', 'required skills'],
+        
     }
 
     # Flatten all possible headers
@@ -69,33 +76,76 @@ def text_segmentation(job_offer_details):
     return parsed_sections
 
 
-def access_bayt(driver):
+def access_bayt(driver:webdriver):
     
     # Accéder à la page de base
     base_url = "https://www.bayt.com/en/morocco/"
     driver.get(base_url)
-    
     # Attendre que la barre de recherche soit disponible, puis saisir "DATA"
     search_input = WebDriverWait(driver, 15).until(
         EC.presence_of_element_located((By.CSS_SELECTOR, "input#text_search"))
     )
     search_input.clear()
     search_input.send_keys("DATA" + Keys.RETURN)
-def extract_job_details(driver:webdriver):
+def extract_job_info(driver : webdriver.Chrome):
+    
     try:
-        titre = driver.find_element(By.CSS_SELECTOR, "h2#jobViewJobTitle").text.strip()
+        data=json.load(open("offres_emploi_bayt.json", "r", encoding="utf-8"))
+    except FileNotFoundError:   
+        data=[]
+    job_urls=WebDriverWait(driver,15).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR,"div.row.is-compact.is-m.no-wrap > h2 > a")))
+    job_urls=[job_url.get_attribute("href") for job_url in job_urls]
+    offers = []
+    #results_inner_card > ul > li.has-pointer-d.is-active > div.row.is-compact.is-m.no-wrap > h2 > a
+    logger.info(f"Found {len(job_urls)} job offers.")
+    for i in range(len(job_urls)):
+        try:
+            job_url=job_urls[i]
+            if check_duplicate(data,job_url):
+                continue
+            driver.get(job_url)
+            try:
+                pop_up=WebDriverWait(driver,15).until(EC.presence_of_element_located((By.CSS_SELECTOR,"body > div.cky-consent-container.cky-box-bottom-left > div > button > img")))
+                pop_up.click()
+            except:
+                pass
+            
+            
+            offer=extract_job_details(driver)
+            offer["job_url"]=job_url
+            
+            try:
+                validate_json(offer)
+                offers.append(offer)
+            except ValidationError as e:
+                continue
+            except Exception as e: 
+                logger.exception(f"Erreur lors de validation JSON : {e}")
+                continue
+            
+        except (ElementClickInterceptedException, ElementNotInteractableException, NoSuchElementException):
+            logger.exception("An error occurred while extracting the job details")
+    return offers
+def extract_job_details(driver:webdriver.Chrome):
+    
+    try:
+        titre = driver.find_element(By.CSS_SELECTOR, 'h1[id="job_title"]').text.strip()
         
     except NoSuchElementException:
         titre = ""
-
     try:
-        companie = driver.find_element(By.CSS_SELECTOR, "#view_inner > div > div.toggle-head.z-hi.u-sticky-m.bg-inverse.bb-m > div.row.is-m.no-wrap.v-align-center.p10t > div > b > a").text.strip()
+        publication_date=WebDriverWait(driver,4).until(EC.presence_of_element_located((By.CSS_SELECTOR,'span[id="jb-posted-date"]'))).text
+        publication_date=extract_date_from_text(publication_date)
+    except NoSuchElementException:
+        publication_date=""
+    try:
+        companie = driver.find_element(By.CSS_SELECTOR, 'a[class="t-default t-bold"]>span').text.strip()
         
     except NoSuchElementException:
         companie = ""
 
     try:
-        job_details=driver.find_element(By.CSS_SELECTOR, "div.u-scrolly.t-small").text.strip()
+        job_details=driver.find_element(By.CSS_SELECTOR,'div[class="t-break"]').text.strip()
         job_details=text_segmentation(job_details)
         
     except NoSuchElementException:
@@ -120,16 +170,17 @@ def find_number_of_pages(driver:webdriver.Chrome):
     except TimeoutException:
         logger.exception("Couldnt find number of pages.")
         
-def change_page(driver:webdriver.Chrome,num_pages:int):
+def change_page(driver:webdriver.Chrome,main_page:str,current_page:int,max_pages:int):
     try:
-        next_page = int(driver.current_url.split("?page=")[1]) + 1
-    except (IndexError, ValueError):
+        next_page = main_page+"?page="+str(current_page)
+        logger.info(f"Next page: {next_page}")
+    except (IndexError, ValueError) as e:
+        logger.exception(e)
         next_page = 1
-    if next_page <= num_pages:
+    if current_page <= max_pages:
         try:
-            url=driver.current_url.split("?page=")[0] + "?page=" + str(next_page)
-            driver.get(url)
-            WebDriverWait(driver,10).until(EC.url_to_be(url))
+            driver.get(next_page)
+            WebDriverWait(driver,10).until(EC.url_to_be(next_page))
             return True
         except TimeoutException:
             logger.exception("No more pages to load.")
@@ -139,65 +190,11 @@ def change_page(driver:webdriver.Chrome,num_pages:int):
         return False
 
 
-def extract_job_info(driver : webdriver.Chrome):
-    try:
-        data=json.load(open("offres_emploi_bayt.json", "r", encoding="utf-8"))
-    except FileNotFoundError:   
-        data=[]
-    job_offers= WebDriverWait(driver, 10).until(
-            EC.presence_of_all_elements_located((By.CSS_SELECTOR, "ul.media-list.in-card > li.has-pointer-d"))
-            )
-    offers = []
-    current_url= driver.current_url
-    logger.info(f"Found {len(job_offers)} job offers.")
-    for i in range(len(job_offers)):
-        try:
-            job_offers= WebDriverWait(driver, 10).until(
-            EC.presence_of_all_elements_located((By.CSS_SELECTOR, "ul.media-list.in-card > li.has-pointer-d"))
-            )
-            
-            job_offer=job_offers[i]
-            try:
-                date_publication=job_offer.find_element(By.CSS_SELECTOR, "div.jb-date.col.p0x.p0t.t-mute > span").text.strip()
-                date_publication=extract_date_from_text(date_publication)
-            except Exception as e:
-                logger.exception("Error while extracting date: ", e)   
-                date_publication=""            
-               
-            job_url=job_offer.find_element(By.CSS_SELECTOR, "a").get_attribute("href")
-            if check_duplicate(data,job_url):
-                continue
-            highlight(job_offer)
-            driver.execute_script("arguments[0].scrollIntoView();", job_offer)
-            time.sleep(0.5)
-            job_offer.click()
-            offer=extract_job_details(driver)
-            offer["job_url"]=job_url
-            offer["publication_date"]=date_publication
-            try:
-                validate_json(offer)
-                offers.append(offer)
-            except ValidationError as e:
-                logger.error("JSON invalide:", e.message)
-                continue
-            except Exception as e: 
-                logger.exception("Erreur lors de validation JSON :", e)
-                continue
-            WebDriverWait(driver, 15).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "span.icon.is-times.has-pointer.t-mute.m0"))).click()
-        except (ElementClickInterceptedException, ElementNotInteractableException, NoSuchElementException):
-            logger.exception("An error occurred while clicking on the job offer")
-            if driver.current_url != current_url:
-                
-                driver.get(current_url)
-                WebDriverWait(driver, 5).until(EC.url_to_be(current_url))
-            continue
-    return offers
+
         
         
 def main():
     start_time = time.time()
-    
     logger.info("Début de l'extraction des offres d'emploi sur Bayt.com")
     # Initialiser le driver 
     try:
@@ -205,17 +202,20 @@ def main():
         data=[]
         # Accéder à la page de base
         access_bayt(driver)
+        main_page=driver.current_url
+        print(f"The main page url is {main_page}")
+        logger.info("accessed search page")
         # Accéder aux offres d'emploi
-        num_pages = find_number_of_pages(driver)
+        max_pages = find_number_of_pages(driver)
         current_page= 1
-        while change_page(driver,num_pages):
-            logger.info("Going to page with url: ", driver.current_url)
+        while change_page(driver,main_page,current_page,max_pages):
+            logger.info(f"Going to page with url: {driver.current_url}")
             data.extend(extract_job_info(driver)) 
-            logger.info(f"Page number {current_page} done, cumulated offers: ", len(data))
+            logger.info(f"Page number {current_page} done, cumulated offers: {len(data)}")
             current_page += 1
         logger.info("All pages done.")
     except Exception as e:
-        logger.exception("An error occurred during extraction:", e)
+        logger.exception(f"An error occurred during extraction:{e}")
     finally:
         driver.quit()
         save_json(data, filename="offres_emploi_bayt.json")       

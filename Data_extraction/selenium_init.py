@@ -1,7 +1,10 @@
 import os
-from selenium import webdriver
+import undetected_chromedriver as uc
+#from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.proxy import Proxy, ProxyType
 import json
 import logging
 import time
@@ -10,19 +13,22 @@ current_path = os.path.abspath(__file__)
 current_dir= os.path.dirname(current_path)
 
 
-def init_driver(executable_path=os.path.dirname(current_dir) + "\chromedriver-win64\chromedriver.exe"):
+def init_driver(executable_path=os.path.dirname(current_dir) + "\chromedriver-win64\chromedriver.exe",proxy_index=0):
+    # Creation du proxy
+    proxy_path=current_dir+"\checked_proxies.txt"
+    proxies=open(proxy_path,"r").readlines()
+    proxy_ip_port=str(proxies[proxy_index]).strip()
     # Creation et configuration du Driver, pour pointer sur le driver changez le chemin executable_path 
-    
     service = Service(executable_path)
     chrome_options = Options()
+    #chrome_options.add_argument(f"--proxy-server={proxy_ip_port}")
     chrome_options.add_argument("--start-maximized")
+    driver = uc.Chrome(options=chrome_options, service=service)
     #chrome_options.add_argument("--headless")
-
-   
-    driver = webdriver.Chrome(options=chrome_options, service=service)
     driver.implicitly_wait(2)  # Time before the program exits in case of exception in seconds, will not wait if the program runs normally
     
     return driver
+
 def highlight(element, effect_time=0.1, color="yellow", border="2px solid red", active=True):
     if active:
         driver = element._parent  
@@ -91,6 +97,7 @@ def validate_json(data, schema_path=os.path.join(current_dir, "Job_schema.json")
         validate(data, schema)
     except ValidationError as e:
         logging.error(f"Validation error: {e.message}")
+        return e
         
 
 def check_duplicate(data, job_url):
@@ -102,13 +109,13 @@ def check_duplicate(data, job_url):
     return False
 
 # Set up a logger
-def setup_logger():
+def setup_logger(filename="app.log"):
     logger = logging.getLogger('my_logger')
     logger.propagate = False  # Disable propagation to root logger
 
     if not logger.hasHandlers():  # Avoid adding handlers multiple times
         # Set the default logging configuration
-        file_handler = logging.FileHandler('app.log') #Log to a file
+        file_handler = logging.FileHandler(filename) #Log to a file
         console_handler = logging.StreamHandler()  # Log to the console
         # Set logging level
         file_handler.setLevel(logging.INFO)

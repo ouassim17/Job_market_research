@@ -20,4 +20,5 @@ repos:
     rev: 6.0.0
     hooks:
     -   id: isort
+        args: [--profile black]
         name: isort(python)

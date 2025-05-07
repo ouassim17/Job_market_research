@@ -1,15 +1,15 @@
 from jsonschema import ValidationError
 from selenium import webdriver
+import datetime
+import time
+import re
+import json
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException,ElementClickInterceptedException,ElementNotInteractableException
 from selenium_init import init_driver, save_json, validate_json, check_duplicate,setup_logger
-import datetime
-import time
-import re
-import json
 
 
 logger=setup_logger("bayt.log")

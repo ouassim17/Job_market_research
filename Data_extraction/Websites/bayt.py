@@ -9,14 +9,13 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException,ElementClickInterceptedException,ElementNotInteractableException
-from selenium_init import init_driver, save_json, validate_json, check_duplicate,setup_logger
+from Data_extraction.Websites.selenium_init import init_driver, save_json, validate_json, check_duplicate,setup_logger
 
 
 logger=setup_logger("bayt.log")
 def extract_date_from_text(text:str):
     try:
-        text = text.lower().strip()
-        
+        text = text.lower().strip()        
         #Chechking for string "yesterday"
         if (match:=re.search(r"\s*yesterday",text)):
             days=1
@@ -104,7 +103,9 @@ def extract_job_info(driver : webdriver.Chrome):
                 continue
             driver.get(job_url)
             try:
-                pop_up=WebDriverWait(driver,15).until(EC.presence_of_element_located((By.CSS_SELECTOR,"body > div.cky-consent-container.cky-box-bottom-left > div > button > img")))
+                pop_up=WebDriverWait(driver,15).until(
+                    EC.presence_of_element_located(
+                        (By.CSS_SELECTOR,"body > div.cky-consent-container.cky-box-bottom-left > div > button > img")))
                 pop_up.click()
             except Exception as e:
                 logger.info(f"No popup found: {e}")

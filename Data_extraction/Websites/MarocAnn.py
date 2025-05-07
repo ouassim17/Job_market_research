@@ -6,7 +6,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException, TimeoutException, WebDriverException
-from selenium_init import init_driver, save_json, validate_json,setup_logger
+from Data_extraction.Websites.selenium_init import init_driver, save_json, validate_json,setup_logger
 
 OUTPUT_FILENAME = "offres_marocannonces.json"
 logger=setup_logger("maroc_ann.log")

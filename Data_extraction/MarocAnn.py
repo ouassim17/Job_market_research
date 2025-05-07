@@ -6,10 +6,10 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException, TimeoutException, WebDriverException
-from selenium_init import init_driver, save_json, validate_json
+from selenium_init import init_driver, save_json, validate_json,setup_logger
 
 OUTPUT_FILENAME = "offres_marocannonces.json"
-
+logger=setup_logger("maroc_ann.log")
 def load_existing_offers(filename):
     """Charge les offres déjà sauvegardées (si le fichier existe)"""
     if os.path.exists(filename):
@@ -24,7 +24,7 @@ def extract_offers(driver):
     """
     offers_list = []
     holders = driver.find_elements(By.CSS_SELECTOR, "li:not(.adslistingpos) div.holder")
-    print(f"Offres trouvées sur cette page : {len(holders)}")
+    logger.info(f"Offres trouvées sur cette page : {len(holders)}")
     
     for holder in holders:
         try:
@@ -39,7 +39,7 @@ def extract_offers(driver):
             }
             offers_list.append(offer)
         except NoSuchElementException as e:
-            print(f"Élément non trouvé dans l'offre principale : {e}")
+            logger.exception(f"Élément non trouvé dans l'offre principale : {e}")
             continue
     return offers_list
 
@@ -115,11 +115,11 @@ def extract_offer_details(driver, offer_url):
         parsed_details = parse_details_text(details_text)
         details.update(parsed_details)
     except TimeoutException:
-        print(f"Timeout lors de la récupération des détails pour {offer_url}")
+        logger.exception(f"Timeout lors de la récupération des détails pour {offer_url}")
     except WebDriverException as we:
-        print(f"WebDriverException pour {offer_url}: {we}")
+        logger.exception(f"WebDriverException pour {offer_url}: {we}")
     except Exception as e:
-        print(f"Erreur lors de l'extraction des détails pour {offer_url}: {e}")
+        logger.exception(f"Erreur lors de l'extraction des détails pour {offer_url}: {e}")
     
     return details
 
@@ -138,67 +138,67 @@ def main():
     page_num = 1
     while True:
         url = base_url.format(page_num)
-        print(f"Scraping page {page_num} : {url}")
+        logger.info(f"Scraping de la page {page_num} : {url}")
         try:
             driver.get(url)
             WebDriverWait(driver, 15).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "div.holder"))
             )
         except TimeoutException:
-            print(f"Timeout lors du chargement de la page {page_num}. Passage à la suivante.")
+            logger.exception(f"Timeout lors du chargement de la page {page_num}. Passage à la suivante.")
             break
         except Exception as e:
-            print(f"Erreur lors du chargement de la page {page_num} : {e}")
+            logger.exception(f"Erreur lors du chargement de la page {page_num} : {e}")
             break
 
         offers = extract_offers(driver)
         if not offers:
-            print("Aucune offre trouvée sur cette page. Fin de la pagination.")
+            logger.info("Aucune offre trouvée sur cette page. Fin de la pagination.")
             break
         
         all_offers.extend(offers)
         page_num += 1
         time.sleep(0.5)
     
-    print(f"Total offres extraites (avant détails) : {len(all_offers)}")
+    logger.info(f"Total offres extraites (avant détails) : {len(all_offers)}")
     
     new_offers = []  # Stockera uniquement les nouvelles offres
     for offer in all_offers:
         offer_url = offer.get("job_url")
         if offer_url in existing_urls:
-            print(f"Offre déjà existante détectée : {offer_url}, passage à la suivante.")
+            logger.info(f"Offre déjà existante détectée : {offer_url}, passage à la suivante.")
             continue
         elif offer_url:
             # Accéder à l'URL de l'offre pour extraire les détails
-            print(f"Extraction des détails de l'offre : {offer_url}")
+            logger.info(f"Extraction des détails de l'offre : {offer_url}")
             details = extract_offer_details(driver, offer_url)
             offer.update(details)
             # Si la nouvelle offre possède une date de publication déjà existante, on passe l'offre
             pub_date = offer.get("date_publication", "")
             if pub_date and pub_date in existing_pub_dates:
-                print(f"Offre existante détectée (date: {pub_date}), non ajoutée.")
+                logger.info(f"Offre existante détectée (date: {pub_date}), non ajoutée.")
                 continue
             try:
                 validate_json(offer)  # Valider la structure JSON de l'offre
                 new_offers.append(offer)
             except Exception as e:
-                print(f"Erreur de validation JSON pour l'offre {offer_url}: {e}")
+                logger.exception(f"Erreur de validation JSON pour l'offre {offer_url}: {e}")
                 continue
             # Mettre à jour l'ensemble pour éviter d'ajouter plusieurs offres avec la même date
             if pub_date:
                 existing_pub_dates.add(pub_date)
             time.sleep(0.5)
         else:
-            print("URL introuvable pour cette offre, passage à la suivante.")
+            logger.info("URL introuvable pour cette offre, passage à la suivante.")
     
-    print(f"Nouvelles offres collectées : {len(new_offers)}")
+    logger.info(f"Nouvelles offres collectées : {len(new_offers)}")
     
     # Combinaison des offres existantes et des nouvelles offres (uniquement les nouvelles)
     all_jobs = existing_offers + new_offers
 
     save_json(all_jobs, OUTPUT_FILENAME)
     driver.quit()
-    print("Extraction terminée !")
+    logger.info("Extraction terminée !")
 
 if __name__ == "__main__":
     main()

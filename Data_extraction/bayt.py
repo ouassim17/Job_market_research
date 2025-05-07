@@ -5,15 +5,14 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException,ElementClickInterceptedException,ElementNotInteractableException
-from selenium_init import init_driver, highlight, save_json, validate_json, check_duplicate,setup_logger
+from selenium_init import init_driver, save_json, validate_json, check_duplicate,setup_logger
 import datetime
 import time
 import re
-import random
 import json
 
 
-logger=setup_logger()
+logger=setup_logger("bayt.log")
 def extract_date_from_text(text:str):
     try:
         text = text.lower().strip()
@@ -134,7 +133,7 @@ def extract_job_details(driver:webdriver.Chrome):
     except NoSuchElementException:
         titre = ""
     try:
-        publication_date=WebDriverWait(driver,4).until(EC.presence_of_element_located((By.CSS_SELECTOR,'span[id="jb-posted-date"]'))).text
+        publication_date=WebDriverWait(driver,10).until(EC.presence_of_element_located((By.CSS_SELECTOR,'span[id="jb-posted-date"]'))).text
         publication_date=extract_date_from_text(publication_date)
     except NoSuchElementException:
         publication_date=""
@@ -152,6 +151,7 @@ def extract_job_details(driver:webdriver.Chrome):
         job_details = ""
     offer={
         "titre": titre,
+        "publication_date":publication_date,
         "companie": companie,
         "via": "Bayt",
         }
@@ -205,10 +205,11 @@ def main():
         main_page=driver.current_url
         print(f"The main page url is {main_page}")
         logger.info("accessed search page")
-        # Accéder aux offres d'emploi
+        # trouver le nombre de pages
         max_pages = find_number_of_pages(driver)
         current_page= 1
         while change_page(driver,main_page,current_page,max_pages):
+            # Accéder aux offres d'emploi
             logger.info(f"Going to page with url: {driver.current_url}")
             data.extend(extract_job_info(driver)) 
             logger.info(f"Page number {current_page} done, cumulated offers: {len(data)}")

@@ -1,20 +1,23 @@
 #!/usr/bin/env python
-import json
-import os
-import logging
 import argparse
+import json
+import logging
+import os
 from datetime import datetime
 
 # Configuration du logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
+    datefmt="%Y-%m-%d %H:%M:%S",
 )
+
 
 def clean_string(value):
     """Supprime les espaces en début/fin d'une chaîne de caractères."""
     return value.strip() if isinstance(value, str) else value
+
+
 def parse_date_value(date_str):
     """
     Essaie de parser une date donnée en utilisant plusieurs formats connus.
@@ -33,7 +36,7 @@ def parse_date_value(date_str):
         "%Y-%m-%d",  # Format ISO
         "%d-%m-%Y",  # Format d-m-Y
         "%m/%d/%Y",  # Format US
-        "%d %b-%H:%M"  # Format pour "10 Apr-10:20" (année manquante, renvoie 1900 par défaut)
+        "%d %b-%H:%M",  # Format pour "10 Apr-10:20" (année manquante, renvoie 1900 par défaut)
     ]
 
     for fmt in formats:
@@ -48,6 +51,7 @@ def parse_date_value(date_str):
 
     logging.warning(f"Aucun format reconnu pour la date '{date_str}'.")
     return date_str
+
 
 # Normalisation pour le format Rekrute (anciennement Recrut)
 def normalize_rekrute(entry, source):
@@ -79,9 +83,10 @@ def normalize_rekrute(entry, source):
         "secteur": clean_string(entry.get("secteur")),
         "salaire": None,
         "domaine": None,
-        "via": [source]
+        "via": [source],
     }
     return normalized
+
 
 # Normalisation pour le format MarrocAnnonces
 def normalize_marroc(entry, source):
@@ -105,15 +110,23 @@ def normalize_marroc(entry, source):
     title = clean_string(entry.get("titre"))
     titre_detail = clean_string(entry.get("titre_detail"))
     missions = entry.get("missions")
-    missions_text = " ".join([clean_string(item) for item in missions if item]) if isinstance(missions, list) else ""
+    missions_text = (
+        " ".join([clean_string(item) for item in missions if item])
+        if isinstance(missions, list)
+        else ""
+    )
     description = titre_detail + (" " + missions_text if missions_text else "")
-    
+
     # Pour compétences, joindre les éléments de profil_requis s'il s'agit d'une liste
     profil = entry.get("profil_requis")
-    competences = ", ".join([clean_string(item) for item in profil if item]) if isinstance(profil, list) else clean_string(profil)
-    
+    competences = (
+        ", ".join([clean_string(item) for item in profil if item])
+        if isinstance(profil, list)
+        else clean_string(profil)
+    )
+
     region = clean_string(entry.get("ville")) or clean_string(entry.get("localisation"))
-    
+
     normalized = {
         "job_url": None,  # L'url est supprimée
         "title": title,
@@ -128,9 +141,10 @@ def normalize_marroc(entry, source):
         "secteur": None,
         "salaire": clean_string(entry.get("salaire")),
         "domaine": clean_string(entry.get("domaine")),
-        "via": [source]
+        "via": [source],
     }
     return normalized
+
 
 # Normalisation pour le format Emplois.ma
 def normalize_emploisma(entry, source):
@@ -141,7 +155,7 @@ def normalize_emploisma(entry, source):
          contrat, region, competences, publication_date
     """
     normalized = {
-        "job_url":  None,
+        "job_url": None,
         "title": clean_string(entry.get("title")),
         "company": clean_string(entry.get("company")),
         "description": clean_string(entry.get("description")),
@@ -154,9 +168,10 @@ def normalize_emploisma(entry, source):
         "secteur": None,
         "salaire": None,
         "domaine": None,
-        "via": [source]
+        "via": [source],
     }
     return normalized
+
 
 def load_json_file(filepath):
     """Charge un fichier JSON et retourne la liste d'objets."""
@@ -165,6 +180,7 @@ def load_json_file(filepath):
     with open(filepath, "r", encoding="utf-8") as f:
         data = json.load(f)
         return data if isinstance(data, list) else [data]
+
 
 def remove_duplicates(data, unique_keys):
     """
@@ -188,6 +204,7 @@ def remove_duplicates(data, unique_keys):
                     seen[key][k] = v
     return list(seen.values())
 
+
 def merge_files(file_rekrute, file_marroc, file_emploisma, unique_keys):
     """
     Charge les trois fichiers JSON, les normalise selon leur type, fusionne les données
@@ -199,36 +216,69 @@ def merge_files(file_rekrute, file_marroc, file_emploisma, unique_keys):
     data_marroc = load_json_file(file_marroc)
     logging.info(f"Chargement du fichier Emplois.ma : {file_emploisma}")
     data_emploisma = load_json_file(file_emploisma)
-    
+
     normalized_rekrute = [normalize_rekrute(item, "Rekrute") for item in data_rekrute]
-    normalized_marroc = [normalize_marroc(item, "MarrocAnnonces") for item in data_marroc]
-    normalized_emploisma = [normalize_emploisma(item, "Emplois.ma") for item in data_emploisma]
-    
+    normalized_marroc = [
+        normalize_marroc(item, "MarrocAnnonces") for item in data_marroc
+    ]
+    normalized_emploisma = [
+        normalize_emploisma(item, "Emplois.ma") for item in data_emploisma
+    ]
+
     all_data = normalized_rekrute + normalized_marroc + normalized_emploisma
     merged_data = remove_duplicates(all_data, unique_keys)
     return merged_data
+
 
 def main():
     parser = argparse.ArgumentParser(
         description="Fusion et normalisation de 3 fichiers JSON d'offres d'emploi issus de sources différentes."
     )
     # Valeurs par défaut basées sur vos chemins relatifs
-    parser.add_argument("--file_rekrute", type=str, default="offres_emploi_rekrute.json", help="Chemin vers le fichier Rekrute")
-    parser.add_argument("--file_marroc", type=str, default="offres_marocannonces.json", help="Chemin vers le fichier MarrocAnnonces")
-    parser.add_argument("--file_emploisma", type=str, default="emplois_ma_data_ai_ml_debug.json", help="Chemin vers le fichier Emplois.ma")
+    parser.add_argument(
+        "--file_rekrute",
+        type=str,
+        default="offres_emploi_rekrute.json",
+        help="Chemin vers le fichier Rekrute",
+    )
+    parser.add_argument(
+        "--file_marroc",
+        type=str,
+        default="offres_marocannonces.json",
+        help="Chemin vers le fichier MarrocAnnonces",
+    )
+    parser.add_argument(
+        "--file_emploisma",
+        type=str,
+        default="emplois_ma_data_ai_ml_debug.json",
+        help="Chemin vers le fichier Emplois.ma",
+    )
     # Pour identifier les doublons, on combine "title" et "publication_date"
-    parser.add_argument("--unique_keys", nargs="+", default=["title", "publication_date"], help="Clé(s) d'unicité pour fusionner les offres")
-    parser.add_argument("--output", type=str, default="merged_jobs.json", help="Fichier de sortie pour les données fusionnées")
+    parser.add_argument(
+        "--unique_keys",
+        nargs="+",
+        default=["title", "publication_date"],
+        help="Clé(s) d'unicité pour fusionner les offres",
+    )
+    parser.add_argument(
+        "--output",
+        type=str,
+        default="merged_jobs.json",
+        help="Fichier de sortie pour les données fusionnées",
+    )
 
     args = parser.parse_args()
-    
+
     try:
-        merged = merge_files(args.file_rekrute, args.file_marroc, args.file_emploisma, args.unique_keys)
+        merged = merge_files(
+            args.file_rekrute, args.file_marroc, args.file_emploisma, args.unique_keys
+        )
         with open(args.output, "w", encoding="utf-8") as f:
             json.dump(merged, f, indent=4, ensure_ascii=False)
         logging.info(f"Fusion terminée. Le résultat est sauvegardé dans {args.output}.")
     except Exception as e:
         logging.error("Une erreur est survenue : %s", e)
+
 
 if __name__ == "__main__":
     main()

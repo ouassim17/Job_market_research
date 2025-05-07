@@ -10,12 +10,11 @@ patterns = [
     {"label": "SKILL", "pattern": "TensorFlow"},
     {"label": "SKILL", "pattern": "Keras"},
     {"label": "SKILL", "pattern": "Machine Learning"},
-    {"label": "SKILL", "pattern": "sparkSQL"}
+    {"label": "SKILL", "pattern": "sparkSQL"},
 ]
 
 # Add patterns to the ruler
-ruler.add_patterns(patterns) # type: ignore
-
+ruler.add_patterns(patterns)  # type: ignore
 
 
 # Processing the text

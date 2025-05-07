@@ -1,8 +1,8 @@
-import json
 import csv
+import json
 
 # Charger les données JSON
-with open('processed_jobs.json', 'r', encoding='utf-8') as f:
+with open("processed_jobs.json", "r", encoding="utf-8") as f:
     data = json.load(f)
 
 # Accéder à la liste selon la clé réelle
@@ -16,14 +16,24 @@ if not isinstance(data, list):
 
 # Définir les champs à écrire dans le CSV (dans l'ordre souhaité)
 fieldnames = [
-    "job_url", "title", "company", "description",
-    "niveau_etudes", "niveau_experience", "contrat",
-    "region", "competences", "publication_date",
-    "via", "titre_homogene", "secteur", "niveau_qualification"
+    "job_url",
+    "title",
+    "company",
+    "description",
+    "niveau_etudes",
+    "niveau_experience",
+    "contrat",
+    "region",
+    "competences",
+    "publication_date",
+    "via",
+    "titre_homogene",
+    "secteur",
+    "niveau_qualification",
 ]
 
 # Écrire dans le fichier CSV
-with open('processed_jobs.csv', 'w', newline='', encoding='utf-8') as csvfile:
+with open("processed_jobs.csv", "w", newline="", encoding="utf-8") as csvfile:
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
 

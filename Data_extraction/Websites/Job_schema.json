@@ -6,7 +6,7 @@
     "companie": { "type": "string" },
     "description": { "type": "string" },
     "niveau_etudes": { "type": "string" },
-    "niveau_experience": { 
+    "niveau_experience": {
       "type": ["string", "null"]
     },
     "contrat": { "type": "string" },

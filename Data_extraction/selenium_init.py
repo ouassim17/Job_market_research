@@ -3,11 +3,8 @@ import undetected_chromedriver as uc
 #from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.proxy import Proxy, ProxyType
 import json
 import logging
-import time
 from jsonschema import validate, ValidationError
 current_path = os.path.abspath(__file__)
 current_dir= os.path.dirname(current_path)
@@ -15,9 +12,9 @@ current_dir= os.path.dirname(current_path)
 
 def init_driver(executable_path=os.path.dirname(current_dir) + "\chromedriver-win64\chromedriver.exe",proxy_index=0):
     # Creation du proxy
-    proxy_path=current_dir+"\checked_proxies.txt"
-    proxies=open(proxy_path,"r").readlines()
-    proxy_ip_port=str(proxies[proxy_index]).strip()
+    #proxy_path=current_dir+"\checked_proxies.txt"
+    #proxies=open(proxy_path,"r").readlines()
+    #proxy_ip_port=str(proxies[proxy_index]).strip()
     # Creation et configuration du Driver, pour pointer sur le driver changez le chemin executable_path 
     service = Service(executable_path)
     chrome_options = Options()
@@ -82,7 +79,7 @@ def save_json(data:list, filename="default.json"):
             with open(filename, "r", encoding="utf-8") as js_file:
                 existing_data = json.load(js_file)
     except FileNotFoundError:
-        logging.error(f"File not found, creating new one")
+        logging.error("File not found, creating new one")
         json.dump
     with open(filename, "w", encoding="utf-8") as js_file:
         

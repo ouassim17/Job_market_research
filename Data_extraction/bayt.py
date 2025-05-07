@@ -106,7 +106,8 @@ def extract_job_info(driver : webdriver.Chrome):
             try:
                 pop_up=WebDriverWait(driver,15).until(EC.presence_of_element_located((By.CSS_SELECTOR,"body > div.cky-consent-container.cky-box-bottom-left > div > button > img")))
                 pop_up.click()
-            except:
+            except Exception as e:
+                logger.info(f"No popup found: {e}")
                 pass
             
             
@@ -117,10 +118,9 @@ def extract_job_info(driver : webdriver.Chrome):
                 validate_json(offer)
                 offers.append(offer)
             except ValidationError as e:
-                continue
-            except Exception as e: 
                 logger.exception(f"Erreur lors de validation JSON : {e}")
                 continue
+            
             
         except (ElementClickInterceptedException, ElementNotInteractableException, NoSuchElementException):
             logger.exception("An error occurred while extracting the job details")

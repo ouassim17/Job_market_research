@@ -1,11 +1,12 @@
 import json
+import time
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException
 from selenium_init import init_driver, highlight, save_json, validate_json, check_duplicate, setup_logger
-import time
+
 
 logger=setup_logger("Rekrute.log")
 # --- Fonction d'extraction des offres sur la page courante ---

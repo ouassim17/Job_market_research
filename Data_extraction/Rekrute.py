@@ -7,7 +7,7 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium_init import init_driver, highlight, save_json, validate_json, check_duplicate, setup_logger
 import time
 
-logger=setup_logger()
+logger=setup_logger("Rekrute.log")
 # --- Fonction d'extraction des offres sur la page courante ---
 def extract_offers(driver):
     try:

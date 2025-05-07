@@ -8,7 +8,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 
-from selenium_init import init_driver, setup_logger,save_json
+from Data_extraction.Websites.selenium_init import init_driver, setup_logger,save_json
 logger=setup_logger("emploi.log")
 
 # Chargement des offres déjà collectées 

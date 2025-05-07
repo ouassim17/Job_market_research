@@ -13,7 +13,7 @@
     "region": { "type": "string" },
     "competences": { "type": "string" },
     "secteur": { "type": "string" },
-    "salaire": { "type": "integer" },
+    "salaire": { "type": ["integer","string"] },
     "domaine": { "type": "string" },
     "extra": { "type": "string" },
     "via": { "type": "string" },

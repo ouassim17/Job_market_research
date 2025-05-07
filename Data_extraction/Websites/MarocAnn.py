@@ -3,15 +3,20 @@ import os
 import re
 import time
 
-from selenium.common.exceptions import (NoSuchElementException,
-                                        TimeoutException, WebDriverException)
+from selenium.common.exceptions import (
+    NoSuchElementException,
+    TimeoutException,
+    WebDriverException,
+)
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-
-from Data_extraction.Websites.selenium_init import (init_driver, save_json,
-                                                    setup_logger,
-                                                    validate_json)
+from selenium_init import (
+    init_driver,
+    save_json,
+    setup_logger,
+    validate_json,
+)
 
 OUTPUT_FILENAME = "offres_marocannonces.json"
 logger = setup_logger("maroc_ann.log")
@@ -56,10 +61,10 @@ def parse_details_text(text):
     """
     details = {}
     lines = [line.strip() for line in text.split("\n") if line.strip()]
-
+    details["via"] = "Maroc_annonces"
     if len(lines) >= 2:
-        details["titre"] += lines[0]
-        details["region"] += lines[1]
+        details["titre"] = lines[0]
+        details["region"] = lines[1]
 
     for line in lines:
         if line.startswith("Publiée le:"):
@@ -110,7 +115,7 @@ def parse_details_text(text):
     try:
         annon_index = lines.index("Annonceur :")
         if annon_index + 1 < len(lines):
-            details["extra"] += lines[annon_index + 1]
+            details["extra"] = lines[annon_index + 1]
     except ValueError:
         pass
 
@@ -179,7 +184,7 @@ def main():
         logger.info(f"Scraping de la page {page_num} : {url}")
         try:
             driver.get(url)
-            WebDriverWait(driver, 15).until(
+            WebDriverWait(driver, 5).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, "div.holder"))
             )
         except TimeoutException:
@@ -214,6 +219,7 @@ def main():
             # Accéder à l'URL de l'offre pour extraire les détails
             logger.info(f"Extraction des détails de l'offre : {offer_url}")
             details = extract_offer_details(driver, offer_url)
+            print(details)
             offer.update(details)
             # Si la nouvelle offre possède une date de publication déjà existante, on passe l'offre
             pub_date = offer.get("date_publication", "")

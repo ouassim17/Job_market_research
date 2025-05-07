@@ -7,10 +7,14 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from Data_extraction.Websites.selenium_init import (check_duplicate, highlight,
-                                                    init_driver, save_json,
-                                                    setup_logger,
-                                                    validate_json)
+from Data_extraction.Websites.selenium_init import (
+    check_duplicate,
+    highlight,
+    init_driver,
+    save_json,
+    setup_logger,
+    validate_json,
+)
 
 logger = setup_logger("Rekrute.log")
 

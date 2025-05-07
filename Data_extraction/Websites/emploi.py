@@ -9,8 +9,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from Data_extraction.Websites.selenium_init import (init_driver, save_json,
-                                                    setup_logger)
+from Data_extraction.Websites.selenium_init import init_driver, save_json, setup_logger
 
 logger = setup_logger("emploi.log")
 

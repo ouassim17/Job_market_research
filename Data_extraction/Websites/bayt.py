@@ -5,19 +5,24 @@ import time
 
 from jsonschema import ValidationError
 from selenium import webdriver
-from selenium.common.exceptions import (ElementClickInterceptedException,
-                                        ElementNotInteractableException,
-                                        NoSuchElementException,
-                                        TimeoutException)
+from selenium.common.exceptions import (
+    ElementClickInterceptedException,
+    ElementNotInteractableException,
+    NoSuchElementException,
+    TimeoutException,
+)
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from Data_extraction.Websites.selenium_init import (check_duplicate,
-                                                    init_driver, save_json,
-                                                    setup_logger,
-                                                    validate_json)
+from Data_extraction.Websites.selenium_init import (
+    check_duplicate,
+    init_driver,
+    save_json,
+    setup_logger,
+    validate_json,
+)
 
 logger = setup_logger("bayt.log")
 

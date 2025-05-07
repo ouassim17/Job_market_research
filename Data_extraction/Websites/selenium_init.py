@@ -5,6 +5,7 @@ import os
 import undetected_chromedriver as uc
 from jsonschema import ValidationError, validate
 from selenium.webdriver.chrome.options import Options
+
 # from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 

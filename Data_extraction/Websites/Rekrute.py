@@ -1,4 +1,3 @@
-import json
 import time
 
 from selenium.common.exceptions import NoSuchElementException
@@ -6,11 +5,10 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-
-from Data_extraction.Websites.selenium_init import (
+from selenium_init import (
     check_duplicate,
-    highlight,
     init_driver,
+    load_json,
     save_json,
     setup_logger,
     validate_json,
@@ -22,7 +20,7 @@ logger = setup_logger("Rekrute.log")
 # --- Fonction d'extraction des offres sur la page courante ---
 def extract_offers(driver):
     try:
-        data = json.load(open("offres_emploi_rekrute.json", "r", encoding="utf-8"))
+        data = load_json("offres_emploi_rekrute.json")
     except FileNotFoundError:
         data = []
     offers_list = []
@@ -45,7 +43,7 @@ def extract_offers(driver):
             job_url = titre.get_attribute("href")
             if check_duplicate(data, job_url):
                 continue
-            highlight(titre)
+
             titre = titre.text.strip()
 
         # 1. Récupérer les prerequis du poste
@@ -56,9 +54,9 @@ def extract_offers(driver):
         if len(info_divs) >= 1:
             try:
                 field = holder.find_element(By.CSS_SELECTOR, "i.fa.fa-search")
-                highlight(field)
+
                 parent_div = field.find_element(By.XPATH, "./ancestor::div[1]")
-                highlight(parent_div)
+
                 competences = parent_div.find_element(By.TAG_NAME, "span").text.strip()
             except NoSuchElementException:
                 competences = ""
@@ -67,9 +65,9 @@ def extract_offers(driver):
         if len(info_divs) >= 2:
             try:
                 field = holder.find_element(By.CSS_SELECTOR, "i.fa.fa-industry")
-                highlight(field)
+
                 parent_div = field.find_element(By.XPATH, "./ancestor::div[1]")
-                highlight(parent_div)
+
                 companie = parent_div.find_element(By.TAG_NAME, "span").text.strip()
 
             except NoSuchElementException:
@@ -80,9 +78,9 @@ def extract_offers(driver):
         if len(info_divs) >= 2:
             try:
                 field = holder.find_element(By.CSS_SELECTOR, "i.fa.fa-binoculars")
-                highlight(field)
+
                 parent_div = field.find_element(By.XPATH, "./ancestor::div[1]")
-                highlight(parent_div)
+
                 description = parent_div.find_element(By.TAG_NAME, "span").text.strip()
             except NoSuchElementException:
                 description = ""
@@ -90,7 +88,7 @@ def extract_offers(driver):
         pub_start = ""
         try:
             date_elem = holder.find_element(By.CSS_SELECTOR, "em.date")
-            highlight(date_elem)
+
             spans = date_elem.find_elements(By.TAG_NAME, "span")
             pub_start = spans[0].text.strip() if len(spans) > 0 else ""
 
@@ -104,7 +102,6 @@ def extract_offers(driver):
                 details_div = info_divs[-1]
                 li_items = details_div.find_elements(By.TAG_NAME, "li")
                 for li in li_items:
-                    highlight(li)
                     txt = li.text.strip()
                     if "Secteur d'activité" in txt:
                         secteur = txt.split(":", 1)[1].strip()
@@ -228,12 +225,12 @@ def main():
     except Exception as e:
         logger.exception(f"Erreur lors de l'extraction :{e}")
     finally:
-        driver.quit()
+        if driver:
+            driver.quit()
         save_json(data, filename="offres_emploi_rekrute.json")
         logger.info(f"Nouvelles offres extraites : {len(data)}")
         logger.info(f"Extraction terminée en {time.time() - start_time} secondes.")
-        return data
+    return data
 
 
-if __name__ == "__main__":
-    main()
+main()

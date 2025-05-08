@@ -1,8 +1,6 @@
-import json
-import os
 import re
-import time
 
+from selenium import webdriver
 from selenium.common.exceptions import (
     NoSuchElementException,
     TimeoutException,
@@ -12,33 +10,30 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium_init import (
+    check_duplicate,
     init_driver,
+    load_json,
     save_json,
     setup_logger,
     validate_json,
 )
 
-OUTPUT_FILENAME = "offres_marocannonces.json"
 logger = setup_logger("maroc_ann.log")
 
 
-def load_existing_offers(filename):
-    """Charge les offres déjà sauvegardées (si le fichier existe)"""
-    if os.path.exists(filename):
-        with open(filename, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return []
-
-
-def extract_offers(driver):
+def extract_offers(driver: webdriver.Chrome):
     """
     Extrait les offres affichées sur la page courante.
     Chaque offre est représentée par un dictionnaire contenant le titre, la localisation et l'URL.
     """
     offers_list = []
-    holders = driver.find_elements(By.CSS_SELECTOR, "li:not(.adslistingpos) div.holder")
-    logger.info(f"Offres trouvées sur cette page : {len(holders)}")
-
+    try:
+        holders = driver.find_elements(
+            By.CSS_SELECTOR, "li:not(.adslistingpos) div.holder"
+        )
+        logger.info(f"Offres trouvées sur cette page : {len(holders)}")
+    except (NoSuchElementException, TimeoutException) as e:
+        logger.warning(f"Erreur lors de l'extraction: {e}")
     for holder in holders:
         try:
             a_tag = holder.find_element(By.XPATH, "./..")
@@ -158,100 +153,89 @@ def extract_offer_details(driver, offer_url):
     return details
 
 
+def change_page(driver: webdriver.Chrome, base_url, page_num):
+    url = base_url.format(page_num)
+    logger.info(f"Scraping de la page {page_num}")
+    try:
+        driver.get(url)
+        WebDriverWait(driver, 5).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "div.holder"))
+        )
+        return True
+    except (Exception, TimeoutException) as e:
+        logger.exception(f"Erreur lors du chargement de la page {page_num}: {e}")
+        return False
+
+
 def main():
-    # Chargement des offres existantes
-    existing_offers = load_existing_offers(OUTPUT_FILENAME)
-    # Création d'un ensemble des dates de publication déjà présentes
-    existing_urls = {
-        job["job_url"] for job in existing_offers if "job_url" in job and job["job_url"]
-    }
-    existing_pub_dates = {
-        job["date_publication"]
-        for job in existing_offers
-        if "date_publication" in job and job["date_publication"]
-    }
-
     driver = init_driver()  # Initialisation du driver (mode headless si configuré)
-    all_offers = []  # Liste temporaire pour les offres collectées dans cette session
+    old_data = load_json("offres_marocannonces.json")
+    new_offres = []  # Stockera uniquement les nouvelles offres
+    new_data = []
+    try:
+        # Construction de l'URL de base (pagination)
+        base_url = "https://www.marocannonces.com/maroc/offres-emploi-b309.html?kw=data+&pge={}"
+        page_num = 1
+        while change_page(driver, base_url, page_num):
+            offers_list = extract_offers(driver)
+            if not offers_list:
+                logger.info(
+                    "Aucune offre trouvée sur cette page. Fin de la pagination."
+                )
+                break
 
-    # Construction de l'URL de base (pagination)
-    base_url = (
-        "https://www.marocannonces.com/maroc/offres-emploi-b309.html?kw=data+&pge={}"
-    )
-    page_num = 1
-    while True:
-        url = base_url.format(page_num)
-        logger.info(f"Scraping de la page {page_num} : {url}")
-        try:
-            driver.get(url)
-            WebDriverWait(driver, 5).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "div.holder"))
-            )
-        except TimeoutException:
-            logger.exception(
-                f"Timeout lors du chargement de la page {page_num}. Passage à la suivante."
-            )
-            break
-        except Exception as e:
-            logger.exception(f"Erreur lors du chargement de la page {page_num} : {e}")
-            break
+            new_offres.extend(offers_list)
+            page_num += 1
 
-        offers = extract_offers(driver)
-        if not offers:
-            logger.info("Aucune offre trouvée sur cette page. Fin de la pagination.")
-            break
+        logger.info(f"Total offres extraites (avant détails) : {len(new_offres)}")
 
-        all_offers.extend(offers)
-        page_num += 1
-        time.sleep(0.5)
+        for offer in new_offres:
+            offer_url = offer.get("job_url")
 
-    logger.info(f"Total offres extraites (avant détails) : {len(all_offers)}")
+            if not offer_url:
+                logger.info("URL introuvable pour cette offre, passage à la suivante.")
+                continue
 
-    new_offers = []  # Stockera uniquement les nouvelles offres
-    for offer in all_offers:
-        offer_url = offer.get("job_url")
-        if offer_url in existing_urls:
-            logger.info(
-                f"Offre déjà existante détectée : {offer_url}, passage à la suivante."
-            )
-            continue
-        elif offer_url:
-            # Accéder à l'URL de l'offre pour extraire les détails
+            if check_duplicate(old_data, offer_url):
+                continue
+
             logger.info(f"Extraction des détails de l'offre : {offer_url}")
             details = extract_offer_details(driver, offer_url)
-            print(details)
             offer.update(details)
-            # Si la nouvelle offre possède une date de publication déjà existante, on passe l'offre
-            pub_date = offer.get("date_publication", "")
-            if pub_date and pub_date in existing_pub_dates:
-                logger.info(
-                    f"Offre existante détectée (date: {pub_date}), non ajoutée."
-                )
+
+            try:
+                pub_date = offer.get("publication_date")
+                existing_pub_dates = [date.get("publication_date") for date in old_data]
+                if pub_date and pub_date in existing_pub_dates:
+                    logger.info(
+                        f"Offre existante détectée (date: {pub_date}), non ajoutée."
+                    )
+                    continue
+            except Exception as e:
+                logger.warning(f"Erreur lors de l'extraction de la date : {e}")
                 continue
+
             try:
                 validate_json(offer)  # Valider la structure JSON de l'offre
-                new_offers.append(offer)
+                new_data.append(offer)
             except Exception as e:
                 logger.exception(
                     f"Erreur de validation JSON pour l'offre {offer_url}: {e}"
                 )
                 continue
-            # Mettre à jour l'ensemble pour éviter d'ajouter plusieurs offres avec la même date
-            if pub_date:
-                existing_pub_dates.add(pub_date)
-            time.sleep(0.5)
-        else:
-            logger.info("URL introuvable pour cette offre, passage à la suivante.")
 
-    logger.info(f"Nouvelles offres collectées : {len(new_offers)}")
+    except Exception as e:
+        logger.warning(f"Erreur lors de l'extraction: {e}")
+    finally:
+        if driver:
+            driver.quit()
+        logger.info(f"Nouvelles offres collectées : {len(new_data)}")
+        # Combinaison des offres existantes et des nouvelles offres
 
-    # Combinaison des offres existantes et des nouvelles offres (uniquement les nouvelles)
-    all_jobs = existing_offers + new_offers
+        save_json(new_data, "offres_marocannonces.json")
 
-    save_json(all_jobs, OUTPUT_FILENAME)
-    driver.quit()
-    logger.info("Extraction terminée !")
+        logger.info("Extraction terminée !")
+    return new_data
 
 
-if __name__ == "__main__":
-    main()
+main()

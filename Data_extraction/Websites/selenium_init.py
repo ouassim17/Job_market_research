@@ -91,11 +91,24 @@ def highlight(
         )
 
 
-def save_json(data: list, filename="default.json"):
-    # --- Sauvegarde locale en JSON (pour vérification) ---
+def save_json(data: list, filename="default.json", output_directory="scraping_output"):
+    # --- Sauvegarde locale en JSON (pour vérification) --
+
+    # Get the absolute path of the current script
+    current_path = os.path.abspath(__file__)
+    current_dir = os.path.dirname(current_path)
+    parent_dir = os.path.dirname(current_dir)
+
+    # Constructing the output path
+    output_path = os.path.join(parent_dir, output_directory)
+    os.makedirs(output_path, exist_ok=True)
+
+    # Change the current working directory
+    os.chdir(output_path)
+
     existing_data = []
     try:
-        if os.path.exists(filename):
+        if os.path.exists(output_path):
             with open(filename, "r", encoding="utf-8") as js_file:
                 existing_data = json.load(js_file)
     except FileNotFoundError:

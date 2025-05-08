@@ -1,21 +1,26 @@
 import json
 import logging
 import os
+import tempfile
 
 import undetected_chromedriver as uc
 from jsonschema import ValidationError, validate
 from selenium.webdriver.chrome.options import Options
 
-# from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-
 current_path = os.path.abspath(__file__)
 current_dir = os.path.dirname(current_path)
 
 
+def find_chromedriver_exe(root_path=os.getcwd()):
+    for dirpath, _, filenames in os.walk(root_path):
+        for file in filenames:
+            if file.lower() == "chromedriver.exe":
+                return os.path.join(dirpath, file)
+    return None
+
+
 def init_driver(
-    executable_path=os.path.dirname(current_dir)
-    + "\chromedriver-win64\chromedriver.exe",
+    executable_path=find_chromedriver_exe(),
     proxy_index=0,
 ):
     # Creation du proxy
@@ -23,11 +28,17 @@ def init_driver(
     # proxies=open(proxy_path,"r").readlines()
     # proxy_ip_port=str(proxies[proxy_index]).strip()
     # Creation et configuration du Driver, pour pointer sur le driver changez le chemin executable_path
-    service = Service(executable_path)
+    # service = Service(executable_path)
     chrome_options = Options()
     # chrome_options.add_argument(f"--proxy-server={proxy_ip_port}")
     chrome_options.add_argument("--start-maximized")
-    driver = uc.Chrome(options=chrome_options, service=service)
+    temp_dir = tempfile.mkdtemp(prefix="profile_")
+    driver = uc.Chrome(
+        headless=False,
+        driver_executable_path=executable_path,
+        options=chrome_options,
+        user_data_dir=temp_dir,
+    )
     # chrome_options.add_argument("--headless")
     driver.implicitly_wait(
         2
@@ -91,7 +102,32 @@ def highlight(
         )
 
 
+def load_json(filename="default.json", encoding="utf-8"):
+    current_path = os.path.abspath(__file__)
+    current_dir = os.path.dirname(current_path)  # Websites directory
+    parent_dir = os.path.dirname(current_dir)  # Data extraction directory
+    filename = os.path.join(parent_dir, "scraping_output", filename)
+    try:
+        data = json.load(open(filename, "r", encoding=encoding))
+    except FileNotFoundError:
+        logging.info("Json file not found creating new one")
+        data = []
+        with open(filename, "w", encoding="utf-8") as js_file:
+            json.dump(data, js_file, ensure_ascii=False, indent=4)
+    return data
+
+
 def save_json(data: list, filename="default.json", output_directory="scraping_output"):
+    """
+    Saves the json data to the specified file in the output directory. Note that if the same filename exists, the data will be apended instead of being overwritten
+
+    data: list of items to be saved as json
+
+    filename: name of the file
+
+    output_directory: the directory where all json outputs are stored
+
+    """
     # --- Sauvegarde locale en JSON (pour vérification) --
 
     # Get the absolute path of the current script
@@ -145,10 +181,12 @@ def check_duplicate(data, job_url):
 def setup_logger(filename="app.log"):
     logger = logging.getLogger("my_logger")
     logger.propagate = False  # Disable propagation to root logger
-
-    if not logger.hasHandlers():  # Avoid adding handlers multiple times
+    current_path = os.path.abspath(__file__)
+    current_dir = os.path.dirname(current_path)
+    log_dir = os.path.join(current_dir, "log", filename)
+    if not logger.hasHandlers():
         # Set the default logging configuration
-        file_handler = logging.FileHandler(filename)  # Log to a file
+        file_handler = logging.FileHandler(log_dir)  # Log to a file
         console_handler = logging.StreamHandler()  # Log to the console
         # Set logging level
         file_handler.setLevel(logging.INFO)

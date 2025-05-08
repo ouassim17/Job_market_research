@@ -1,5 +1,4 @@
 import datetime
-import json
 import re
 import time
 
@@ -15,10 +14,10 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-
-from Data_extraction.Websites.selenium_init import (
+from selenium_init import (
     check_duplicate,
     init_driver,
+    load_json,
     save_json,
     setup_logger,
     validate_json,
@@ -89,24 +88,25 @@ def text_segmentation(job_offer_details):
     return parsed_sections
 
 
-def access_bayt(driver: webdriver):
+def access_bayt(driver: webdriver.Chrome):
     # Accéder à la page de base
     base_url = "https://www.bayt.com/en/morocco/"
     driver.get(base_url)
     # Attendre que la barre de recherche soit disponible, puis saisir "DATA"
-    search_input = WebDriverWait(driver, 15).until(
+    search_input = WebDriverWait(driver, 5).until(
         EC.presence_of_element_located((By.CSS_SELECTOR, "input#text_search"))
     )
     search_input.clear()
-    search_input.send_keys("DATA" + Keys.RETURN)
+    while driver.current_url == base_url:
+        search_input.send_keys("DATA" + Keys.RETURN)
 
 
 def extract_job_info(driver: webdriver.Chrome):
     try:
-        data = json.load(open("offres_emploi_bayt.json", "r", encoding="utf-8"))
+        data = load_json("offres_emploi_bayt.json")
     except FileNotFoundError:
         data = []
-    job_urls = WebDriverWait(driver, 15).until(
+    job_urls = WebDriverWait(driver, 5).until(
         EC.presence_of_all_elements_located(
             (By.CSS_SELECTOR, "div.row.is-compact.is-m.no-wrap > h2 > a")
         )
@@ -122,7 +122,7 @@ def extract_job_info(driver: webdriver.Chrome):
                 continue
             driver.get(job_url)
             try:
-                pop_up = WebDriverWait(driver, 15).until(
+                pop_up = WebDriverWait(driver, 5).until(
                     EC.presence_of_element_located(
                         (
                             By.CSS_SELECTOR,
@@ -131,9 +131,9 @@ def extract_job_info(driver: webdriver.Chrome):
                     )
                 )
                 pop_up.click()
-            except Exception as e:
-                logger.info(f"No popup found: {e}")
-                pass
+                logger.info("Popup found and clicked.")
+            except (ElementClickInterceptedException, ElementNotInteractableException):
+                logger.info("No popup found — continuing without action.")
 
             offer = extract_job_details(driver)
             offer["job_url"] = job_url
@@ -162,7 +162,7 @@ def extract_job_details(driver: webdriver.Chrome):
         titre = ""
     try:
         publication_date = (
-            WebDriverWait(driver, 10)
+            WebDriverWait(driver, 5)
             .until(
                 EC.presence_of_element_located(
                     (By.CSS_SELECTOR, 'span[id="jb-posted-date"]')
@@ -202,7 +202,7 @@ def extract_job_details(driver: webdriver.Chrome):
 
 def find_number_of_pages(driver: webdriver.Chrome):
     try:
-        num_of_pages = WebDriverWait(driver, 15).until(
+        num_of_pages = WebDriverWait(driver, 5).until(
             EC.presence_of_element_located(
                 (By.CSS_SELECTOR, "ul.pagination li.pagination-last-d a")
             )
@@ -226,7 +226,7 @@ def change_page(
     if current_page <= max_pages:
         try:
             driver.get(next_page)
-            WebDriverWait(driver, 10).until(EC.url_to_be(next_page))
+            # WebDriverWait(driver, 5).until(EC.url_to_be(next_page))
             return True
         except TimeoutException:
             logger.exception("No more pages to load.")
@@ -263,12 +263,12 @@ def main():
     except Exception as e:
         logger.exception(f"An error occurred during extraction:{e}")
     finally:
-        driver.quit()
+        if driver:
+            driver.quit()
         save_json(data, filename="offres_emploi_bayt.json")
         logger.info(f"Nouvelles offres extraites : {len(data)}")
         logger.info(f"Extraction terminée en {time.time() - start_time} secondes.")
-        return data
+    return data
 
 
-if __name__ == "__main__":
-    main()
+main()

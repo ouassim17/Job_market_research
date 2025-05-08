@@ -14,9 +14,11 @@ logging.basicConfig(
 def run_data_extraction_scripts():
     total_offres = 0
     logging.info("Démarrage du processus d'extraction des données.")
+    traitement_dir = os.path.dirname(__file__)
+    parent_dir = os.path.dirname(traitement_dir)
 
     # Chemin du dossier Data_extraction
-    extraction_dir = os.path.join(os.path.dirname(__file__), "Data_extraction")
+    extraction_dir = os.path.join(parent_dir, "Websites")
 
     # Vérifier si le dossier existe
     if not os.path.exists(extraction_dir):
@@ -25,6 +27,7 @@ def run_data_extraction_scripts():
 
     # Lister tous les fichiers Python dans le dossier
     py_files = [f for f in os.listdir(extraction_dir) if f.endswith(".py")]
+    print(py_files)
     logging.info(f"Scripts trouvés: {py_files}")
 
     # Exécuter chaque fichier Python

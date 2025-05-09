@@ -159,6 +159,7 @@ def save_json(data: list, filename="default.json", output_directory="scraping_ou
 
 
 def validate_json(data, schema_path=os.path.join(current_dir, "Job_schema.json")):
+    """Validates the json data according to the schema provided in arguments"""
     with open(schema_path) as f:
         schema = json.load(f)
     try:
@@ -169,6 +170,12 @@ def validate_json(data, schema_path=os.path.join(current_dir, "Job_schema.json")
 
 
 def check_duplicate(data, job_url):
+    """A function to check if a job offer is already present in the old data. Returns true if there is a duplicate offer found
+
+    data: the old job offers data
+
+    job_url: the current job_url to be matched
+    """
     # Check if the job URL already exists in the data
     for job in data[:][:]:
         if job.get("job_url") == job_url:

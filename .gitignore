@@ -1,6 +1,6 @@
 
-/chromedriver-win64/
-
+*.exe
+*.chromedriver
 
 /venv/
 

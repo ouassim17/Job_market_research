@@ -171,8 +171,6 @@ def get_pages_url(driver):
             "href"
         )
         driver.get(page_link)
-        time.sleep(2)
-
         pagination = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located(
                 (By.CSS_SELECTOR, "div.slide-block div.pagination select")

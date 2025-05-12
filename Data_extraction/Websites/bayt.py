@@ -21,6 +21,7 @@ from selenium_init import (
     validate_json,
 )
 import undetected_chromedriver as uc
+from __init__ import *
 
 logger = setup_logger("bayt.log")
 

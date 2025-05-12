@@ -1,5 +1,17 @@
 import re
 from selenium import webdriver
+
+# Define parse_details_text function
+def parse_details_text(details_text):
+    """Parse the details text and return a dictionary of extracted details."""
+    # Example parsing logic (adjust as needed for your use case)
+    details = {}
+    lines = details_text.split("\n")
+    for line in lines:
+        if ":" in line:
+            key, value = line.split(":", 1)
+            details[key.strip()] = value.strip()
+    return details
 from selenium.common.exceptions import (
     NoSuchElementException,
     TimeoutException,
@@ -41,7 +53,7 @@ def extract_offers(driver: webdriver.Chrome):
             logger.exception(f"Element missing in offer extraction: {e}")
             continue
 
-    return offers_list
+        parsed_details = parse_details_text(details_text)  # Ensure parse_details_text is defined or imported
 
 def extract_offer_details(driver, offer_url):
     """ Extract job details from an individual listing. """

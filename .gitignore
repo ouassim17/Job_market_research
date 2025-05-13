@@ -12,5 +12,5 @@
 *.txt
 *pyc
 *.env
-*.json
+
 *.lock

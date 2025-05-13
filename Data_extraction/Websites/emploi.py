@@ -13,21 +13,6 @@ from selenium_init import (
     setup_logger,
     validate_json,
 )
-from __init__ import *
-import undetected_chromedriver as uc
-
-def init_driver():
-    try:
-        chrome_options = uc.ChromeOptions()
-        chrome_options.add_argument("--start-maximized")
-
-        # Automatically download and use the correct ChromeDriver version
-        driver = uc.Chrome(options=chrome_options, use_subprocess=True)
-        driver.implicitly_wait(2)
-        return driver
-    except Exception as e:
-        logger.error(f"Failed to initialize WebDriver: {str(e)}")
-        return None
 
 logger = setup_logger("emploi.log")
 # Initialisation du driver

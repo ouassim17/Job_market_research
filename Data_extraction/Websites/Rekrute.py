@@ -13,21 +13,6 @@ from selenium_init import (
     setup_logger,
     validate_json,
 )
-import undetected_chromedriver as uc
-
-def init_driver():
-    try:
-        chrome_options = uc.ChromeOptions()
-        chrome_options.add_argument("--start-maximized")
-
-        # Automatically download and use the correct ChromeDriver version
-        driver = uc.Chrome(options=chrome_options, use_subprocess=True)
-        driver.implicitly_wait(2)
-        return driver
-    except Exception as e:
-        logger.error(f"Failed to initialize WebDriver: {str(e)}")
-        return None
-
 
 logger = setup_logger("Rekrute.log")
 
@@ -219,6 +204,7 @@ def change_page(driver, page_url):
 
 def main():
     start_time = time.time()
+
     logger.info("Début de l'extraction des offres d'emploi sur Rekrute")
     try:
         # --- Initialisation du driver Chrome ---
@@ -244,5 +230,5 @@ def main():
         logger.info(f"Extraction terminée en {time.time() - start_time} secondes.")
     return data
 
-if __name__ == "__main__":
-    main()
+
+main()

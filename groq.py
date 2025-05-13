@@ -1,219 +1,150 @@
-
 import os
 import json
+import logging
 import re
 import time
-import logging
+import random
 from datetime import datetime
-from collections import Counter
 import requests
 from dotenv import load_dotenv
+from collections import Counter
 
-# --- 0. Chargement des variables d'environnement ---
-load_dotenv()
-GROQ_API_KEY = os.getenv('GROQ_API_KEY')
-GROQ_API_URL = os.getenv('GROQ_API_URL')
-if not GROQ_API_KEY or not GROQ_API_KEY.startswith('sk-'):
-    logging.error("Clé API GROQ non configurée ou invalide dans .env")
-    exit(1)
-if not GROQ_API_URL:
-    logging.error("Variable GROQ_API_URL non définie dans .env")
-    exit(1)
-
-# --- 1. Configuration du logging ---
+# Configuration des logs
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('process_jobs.log', encoding='utf-8'),
+        logging.FileHandler('traitement_demon.log', encoding='utf-8'),
         logging.StreamHandler()
     ]
 )
-logger = logging.getLogger(__name__)
 
-# --- 2. Fonctions utilitaires ---
+# Chargement des variables d'environnement
+load_dotenv()
+API_KEY = os.getenv("GROQ_API_KEY")
+GROQ_URL = os.getenv('GROQ_API_URL', 'https://api.groq.com/openai/v1/chat/completions')
+if not API_KEY or not API_KEY.startswith("gsk_"):
+    logging.error("Clé API Groq non configurée - Vérifiez .env")
+    exit(1)
+
+INPUT_FILE = r"C:\Users\houss\Desktop\DXC\Job_market_research\Data_extraction\Traitement\output\backup_offers_20250512_193230.json"
+OUTPUT_FILE = "processed_jobs_demon.json"
+
+# Pré-prompt et prompt système pour GROQ
+PRE_PROMPT = (
+    "Tu vas recevoir un batch d'offres d'emploi structuré. "
+    "Pour chaque offre, analyse et enrichis les informations techniques liées aux données."
+)
+SYSTEM_PROMPT = (
+    "TU ES UN EXPERT EN ANALYSE DE POSTES DE DONNÉES. TA MISSION :\n"
+    "1. Détermine si le poste est lié aux données (1) ou non (0)\n"
+    "2. Si data_profile=1, catégorise en BI / DATA ENGINEERING / DATA SCIENCE / DATA ANALYST\n"
+    "3. Normalise le niveau d'études (0-5)\n"
+    "4. Normalise l'expérience (années → valeur numérique) et déduit la séniorité (Junior, Senior, Expert)\n"
+    "RENVOIE UNIQUEMENT UN JSON ARRAY d'objets avec les clés : "
+    "is_data_profile, profile, niveau_etudes, niveau_experience, competences_techniques"
+)
+
+# Chargement JSON
 def load_json(file_path):
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             return json.load(f)
     except Exception as e:
-        logger.error(f"Erreur lecture {file_path} : {e}")
+        logging.error(f"Erreur lecture {file_path} : {e}")
         exit(1)
 
-
-def normalize_etudes(value):
-    mapping = {
-        'bac': 1,
-        'bac+2': 2,
-        'bac+3': 3,
-        'bac+4': 4,
-        'bac+5 et plus': 5
-    }
-    if not isinstance(value, str):
-        return 0
-    return mapping.get(value.lower().strip(), 0)
-
-
-def normalize_experience(value):
-    if not isinstance(value, str):
-        return 0
-    nums = re.findall(r'\d+', value)
-    return max(map(int, nums)) if nums else 0
-
+# Préparation d'une offre
 
 def prepare_offer(o):
-    # Nettoyage secteur
-    secteur = o.get('secteur', '')
-    secteurs = [s.strip() for s in re.split(r'[;,]', secteur) if s.strip()]
-    # Normalisation compétences
-    comp = o.get('competences', '')
-    comp_list = [c.strip() for c in re.split(r'[;,]', comp) if c.strip()]
+    secteurs = [s.strip() for s in re.split(r'[;,]', o.get('secteur','')) if s.strip()]
+    comp_list = [c.strip() for c in re.split(r'[;,]', o.get('intro','').lower()) if c.strip()]
     return {
-        'title': o.get('titre', ''),
-        'description': o.get('description', ''),
+        'title': o.get('titre',''),
+        'description': o.get('intro',''),
         'secteur': secteurs,
         'competences': comp_list,
-        'niveau_etudes': o.get('niveau_etudes', ''),
-        'niveau_experience': o.get('niveau_experience', '')
+        'job_url': o.get('job_url','')
     }
 
-
-def clean_response(text):
-    # Extrait JSON array du texte
-    match = re.search(r"\[.*\]", text, re.DOTALL)
+# Nettoyage de la réponse de l'API
+def clean_response(response_text):
+    match = re.search(r"\[.*\]", response_text, re.DOTALL)
     if not match:
-        logger.error("Aucun JSON array trouvé dans la réponse")
+        logging.error("Aucun JSON valide trouvé dans la réponse")
         return []
     try:
-        data = json.loads(match.group(0))
+        arr = json.loads(match.group(0))
     except json.JSONDecodeError as e:
-        logger.error(f"Erreur JSONDecode : {e}")
+        logging.error(f"Erreur JSONDecode : {e}")
         return []
     valid = []
-    required = ['is_data_profile', 'niveau_etudes', 'niveau_experience', 'competences_techniques', 'profile']
-    for entry in data:
-        if not isinstance(entry, dict):
-            logger.error(f"Entrée non valide : {entry}")
-            continue
-        if not all(k in entry for k in required):
-            logger.error(f"Clés manquantes dans {entry}")
-            continue
-        try:
-            entry['is_data_profile'] = int(entry['is_data_profile'])
-            entry['niveau_etudes'] = int(entry['niveau_etudes'])
-            entry['niveau_experience'] = int(entry['niveau_experience'])
-        except ValueError:
-            logger.error(f"Conversion int échouée pour {entry}")
-            continue
-        entry['competences_techniques'] = [c.strip().capitalize() for c in entry.get('competences_techniques', [])]
-        entry['profile'] = entry.get('profile', '').upper()
+    for entry in arr:
+        for k in ('is_data_profile','profile','niveau_etudes','niveau_experience','competences_techniques'):
+            entry.setdefault(k, 0 if 'niveau' in k or k=='is_data_profile' else 'NONE')
+        # conversion
+        entry['is_data_profile'] = safe_int(entry['is_data_profile'])
+        entry['niveau_etudes'] = safe_int(entry['niveau_etudes'])
+        entry['niveau_experience'] = safe_int(entry['niveau_experience'])
+        entry['competences_techniques'] = [c.strip().capitalize() for c in entry.get('competences_techniques',[]) if isinstance(entry.get('competences_techniques',[]), list)]
+        entry['profile'] = (entry.get('profile') or 'NONE').upper()
         valid.append(entry)
     return valid
 
+# Conversion sécurisée en entier
+def safe_int(value):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return 0
+
+# Requête GROQ avec gestion backoff et jitter
 
 def process_with_groq(batch):
-    system_prompt = (
-        "TU ES UN EXPERT EN ANALYSE DE POSTES DE DONNÉES. "
-        "RENVOIE UNIQUEMENT UN JSON ARRAY d'objets avec les clés : "
-        "is_data_profile, profile, niveau_etudes, niveau_experience, seniorite, competences_techniques"
-    )
-    user_messages = []
-    for o in batch:
-        user_messages.append(
-            f"Titre: {o['title']}\nDescription: {o['description'][:1000]}\n"
-            f"Secteur: {', '.join(o['secteur'])}\n"
-            f"Compétences: {', '.join(o['competences'])}"
-        )
-    user_content = "\n---\n".join(user_messages)
-    payload = {
-        'model': 'llama3-8b-8192',
-        'temperature': 0.1,
-        'messages': [
-            {'role': 'system', 'content': system_prompt},
-            {'role': 'user', 'content': user_content}
-        ]
-    }
-    for attempt in range(3):
-        try:
-            resp = requests.post(
-                GROQ_API_URL,
-                headers={
-                    'Authorization': f'Bearer {GROQ_API_KEY}',
-                    'Content-Type': 'application/json'
-                },
-                json=payload,
-                timeout=60
-            )
-            if resp.status_code == 429:
-                wait = int(resp.headers.get('Retry-After', 5))
-                logger.warning(f"Rate limit, retry après {wait}s")
-                time.sleep(wait)
-                continue
-            resp.raise_for_status()
-            content = resp.json().get('choices', [])[0].get('message', {}).get('content', '')
-            return clean_response(content)
-        except requests.HTTPError as e:
-            logger.error(f"HTTP error {resp.status_code}: {resp.text}")
-            break
-        except Exception as e:
-            logger.error(f"Erreur API: {e}")
-            break
+    url = GROQ_URL
+    # Correction URL si typo
+    if 'openaiv1' in url:
+        url = url.replace('openaiv1', 'openai/v1')
+
+    max_retries = 3
+    system_msg = PRE_PROMPT + "\n" + SYSTEM_PROMPT
+    user_msg = "\n---\n".join([
+        f"Titre: {o['title']}\nDescription: {o['description'][:1000]}\nURL: {o['job_url']}" for o in batch
+    ])
+    payload = {'model':'llama3-8b-8192','temperature':0.1,'messages':[{'role':'system','content':system_msg},{'role':'user','content':user_msg}]}
+
+    for attempt in range(max_retries):
+        resp = requests.post(url, headers={'Authorization':f'Bearer {API_KEY}','Content-Type':'application/json'}, json=payload, timeout=60)
+        if resp.status_code == 429:
+            logging.warning("Rate limit 429 détecté, pause fixe de 30s pour éviter les blocages")
+            time.sleep(30)
+            continue
+        if not resp.ok:
+            logging.error(f"Erreur API {resp.status_code}: {resp.text}")
+            return []
+        return clean_response(resp.json().get('choices',[])[0].get('message',{}).get('content',''))
+    logging.error("Échec après retries, abandon du batch")
     return []
 
-# --- 3. Pipeline principal ---
+# Pipeline principal
+
 def main():
-    input_file = 'merged_jobs.json'
-    output_file = 'processed_jobs_demon.json'
-    data = load_json(input_file)
-    batches = [data[i:i+2] for i in range(0, len(data), 2)]
-
+    data = load_json(INPUT_FILE)
+    batch_size = 10
+    batches = [data[i:i+batch_size] for i in range(0, len(data), batch_size)]
     results = []
-    counter = 0
-    for idx, batch in enumerate(batches, 1):
-        logger.info(f"Traitement lot {idx}/{len(batches)}: {len(batch)} offres")
-        prepared = [prepare_offer(o) for o in batch]
-        processed = process_with_groq(prepared)
-        if not processed:
-            continue
-        for orig, upd in zip(batch, processed):
-            orig.update({
-                'is_data_profile': upd['is_data_profile'],
-                'niveau_etudes_normalized': normalize_etudes(orig.get('niveau_etudes', '')),
-                'experience_years': normalize_experience(orig.get('niveau_experience', '')),
-                'competences_techniques': upd['competences_techniques'],
-                'profile': upd['profile']
-            })
-            results.append(orig)
-        counter += 1
-        if counter % 5 == 0:
-            logger.info("Cooldown 30s après 5 requêtes")
-            time.sleep(30)
-        time.sleep(3)
+    for idx, batch in enumerate(batches,1):
+        logging.info(f"Lot {idx}/{len(batches)}: {len(batch)} offres")
+        processed = process_with_groq([prepare_offer(o) for o in batch])
+        if processed:
+            for orig, upd in zip(batch, processed):
+                orig.update(upd)
+                results.append(orig)
+        # Pause fixe de 30s après chaque requête pour éviter tout 429
+        logging.info("Pause fixe de 30s entre chaque requête")
+        time.sleep(30)
+    with open(OUTPUT_FILE,'w',encoding='utf-8') as f: json.dump(results,f,ensure_ascii=False,indent=2)
+    logging.info(f"Enregistré {len(results)} offres dans {OUTPUT_FILE}")
 
-    # Stats
-    competence_counts = Counter()
-    profile_counts = Counter()
-    for o in results:
-        competence_counts.update(o.get('competences_techniques', []))
-        profile_counts.update([o.get('profile', '')])
-
-    output = {
-        'metadata': {
-            'processed_at': datetime.now().isoformat(),
-            'total_processed': len(results),
-            'data_profile_count': sum(1 for o in results if o.get('is_data_profile')==1),
-            'profile_distribution': dict(profile_counts)
-        },
-        'results': results,
-        'stats': {
-            'etudes_dist': dict(Counter(normalize_etudes(o.get('niveau_etudes', '')) for o in results)),
-            'experience_dist': dict(Counter(o.get('experience_years') for o in results)),
-            'competences_pop': competence_counts.most_common(15)
-        }
-    }
-    with open(output_file, 'w', encoding='utf-8') as f:
-        json.dump(output, f, ensure_ascii=False, indent=2)
-    logger.info(f"Résultats enregistrés dans {output_file}")
-
-if __name__ == '__main__':
+if __name__=='__main__':
     main()

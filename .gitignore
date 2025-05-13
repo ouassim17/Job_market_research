@@ -14,7 +14,7 @@
 
 
 *.log
-
+*.txt
 *pyc
 *.env
 *.json

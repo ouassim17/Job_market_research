@@ -2,14 +2,9 @@
 *.exe
 *.chromedriver
 
-<<<<<<< HEAD
-/venv/
-
-=======
 /.venv/
 /venv/
 /.env
->>>>>>> 731a9834323e3a209b1f9c7c9929f03f49fc4f10
 
 
 

@@ -50,6 +50,7 @@ dependencies = [
   "pymongo==4.11.3",
   "PySocks==1.7.1",
   "python-dotenv==1.1.0",
+  "redis>=6.1.0",
   "referencing==0.36.2",
   "requests==2.32.3",
   "rich==13.9.4",

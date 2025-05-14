@@ -22,75 +22,64 @@ logger = setup_logger("maroc_ann.log")
 
 
 def extract_offers(driver: webdriver.Chrome):
-    """
-    Extrait les offres affichées sur la page courante.
-    Chaque offre est représentée par un dictionnaire contenant le titre, la localisation et l'URL.
-    """
-    offers_list = []
+    """Extrait les offres sur la page actuelle du site."""
+    offers = []
     try:
         holders = driver.find_elements(
             By.CSS_SELECTOR, "li:not(.adslistingpos) div.holder"
         )
-        logger.info(f"Offres trouvées sur cette page : {len(holders)}")
+        logger.info(f"{len(holders)} offres trouvées.")
     except (NoSuchElementException, TimeoutException) as e:
-        logger.warning(f"Erreur lors de l'extraction: {e}")
+        logger.warning(f"Erreur lors de l'extraction des offres : {e}")
+        return offers
+
     for holder in holders:
         try:
-            a_tag = holder.find_element(By.XPATH, "./..")
-            job_url = a_tag.get_attribute("href")
+            job_url = holder.find_element(By.XPATH, "./..").get_attribute("href")
             job_title = holder.find_element(By.TAG_NAME, "h3").text.strip()
             location = holder.find_element(By.CLASS_NAME, "location").text.strip()
-            offer = {"titre": job_title, "region": location, "job_url": job_url}
-            offers_list.append(offer)
+
+            offers.append(
+                {
+                    "titre": job_title,
+                    "region": location,
+                    "job_url": job_url,
+                }
+            )
         except NoSuchElementException as e:
-            logger.exception(f"Élément non trouvé dans l'offre principale : {e}")
+            logger.exception(f"Élément manquant dans une offre : {e}")
             continue
-    return offers_list
+    return offers
 
 
 def parse_details_text(text):
-    """
-    Parse le texte brut récupéré dans le conteneur 'used-cars'
-    afin d'extraire une structure détaillée.
-    Retourne un dictionnaire structuré.
-    """
-    details = {}
+    """Analyse et structure le texte de l'offre d'emploi."""
+    details = {"via": "Maroc_annonces"}
     lines = [line.strip() for line in text.split("\n") if line.strip()]
-    details["via"] = "Maroc_annonces"
+    text_joined = "\n".join(lines)
+
     if len(lines) >= 2:
         details["titre"] = lines[0]
         details["region"] = lines[1]
 
     for line in lines:
         if line.startswith("Publiée le:"):
-            details["publication_date"] = line.replace("Publiée le:", "").strip()
+            details["publication_date"] = line.split("Publiée le:")[1].strip()
 
-    text_joined = "\n".join(lines)
-    intro_match = re.search(r"Annonce N°:.*\n(.*?)\nMissions :", text_joined, re.DOTALL)
-    if intro_match:
-        details["description"] = intro_match.group(1).strip()
+    def extract_block(pattern):
+        match = re.search(pattern, text_joined, re.DOTALL)
+        return match.group(1).strip().split("\n") if match else []
 
-    missions_match = re.search(
-        r"Missions\s*:\s*\n(.*?)\nProfil requis\s*:", text_joined, re.DOTALL
-    )
-    if missions_match:
-        missions = [
-            m.strip("- ").strip()
-            for m in missions_match.group(1).split("\n")
-            if m.strip()
-        ]
-        details["extra"] = missions
+    description = re.search(r"Annonce N°:.*\n(.*?)\nMissions :", text_joined, re.DOTALL)
+    if description:
+        details["description"] = description.group(1).strip()
 
-    profil_match = re.search(
-        r"Profil requis\s*:\s*\n(.*?)(Domaine\s*:|$)", text_joined, re.DOTALL
-    )
-    if profil_match:
-        profil_lines = [
-            p.strip("- ").strip()
-            for p in profil_match.group(1).split("\n")
-            if p.strip()
-        ]
-        details["extra"] += profil_lines
+    missions = extract_block(r"Missions\s*:\s*\n(.*?)\nProfil requis\s*:")
+    profil = extract_block(r"Profil requis\s*:\s*\n(.*?)(Domaine\s*:|$)")
+
+    details["extra"] = [
+        item.strip("- ").strip() for item in missions + profil if item.strip()
+    ]
 
     fields = [
         "Domaine",
@@ -102,140 +91,110 @@ def parse_details_text(text):
         "Ville",
     ]
     for field in fields:
-        pattern = r"{} *: *(.*)".format(field)
-        match = re.search(pattern, text_joined)
+        match = re.search(rf"{field}\s*:\s*(.+)", text_joined)
         if match:
-            details[field.lower().replace(" ", "_")] = match.group(1).strip()
+            key = field.lower().replace(" ", "_")
+            details[key] = match.group(1).strip()
 
-    try:
-        annon_index = lines.index("Annonceur :")
-        if annon_index + 1 < len(lines):
-            details["extra"] = lines[annon_index + 1]
-    except ValueError:
-        pass
+    def get_next_line_value(label):
+        try:
+            idx = lines.index(label)
+            return lines[idx + 1] if idx + 1 < len(lines) else None
+        except ValueError:
+            return None
 
-    try:
-        tel_index = lines.index("Téléphone :")
-        if tel_index + 1 < len(lines):
-            details["extra"] += lines[tel_index + 1]
-    except ValueError:
-        pass
+    annonceur = get_next_line_value("Annonceur :")
+    telephone = get_next_line_value("Téléphone :")
+
+    if annonceur:
+        details["extra"].append(annonceur)
+    if telephone:
+        details["extra"].append(telephone)
 
     return details
 
 
 def extract_offer_details(driver, offer_url):
-    """
-    Accède à la page de détail d'une offre et récupère le contenu du conteneur 'div.used-cars'
-    en le structurant via parse_details_text.
-    """
-    details = {}
+    """Accède à une offre et en extrait les détails."""
     try:
         driver.set_page_load_timeout(60)
         driver.get(offer_url)
-        used_cars_container = WebDriverWait(driver, 15).until(
+
+        container = WebDriverWait(driver, 15).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "div.used-cars"))
         )
-        details_text = used_cars_container.text.strip()
-        parsed_details = parse_details_text(details_text)
-        details.update(parsed_details)
+        return parse_details_text(container.text.strip())
     except TimeoutException:
-        logger.exception(
-            f"Timeout lors de la récupération des détails pour {offer_url}"
-        )
+        logger.exception(f"Timeout pour l'URL {offer_url}")
     except WebDriverException as we:
         logger.exception(f"WebDriverException pour {offer_url}: {we}")
     except Exception as e:
-        logger.exception(
-            f"Erreur lors de l'extraction des détails pour {offer_url}: {e}"
-        )
-
-    return details
+        logger.exception(f"Erreur inattendue pour {offer_url}: {e}")
+    return {}
 
 
-def change_page(driver: webdriver.Chrome, base_url, page_num):
-    url = base_url.format(page_num)
-    logger.info(f"Scraping de la page {page_num}")
+def change_page(driver, base_url, page_num):
+    """Navigue vers la page indiquée."""
     try:
-        driver.get(url)
+        driver.get(base_url.format(page_num))
         WebDriverWait(driver, 5).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "div.holder"))
         )
+        logger.info(f"Page {page_num} chargée.")
         return True
-    except (Exception, TimeoutException) as e:
-        logger.exception(f"Erreur lors du chargement de la page {page_num}: {e}")
+    except Exception as e:
+        logger.exception(f"Erreur chargement page {page_num}: {e}")
         return False
 
 
 def main():
-    driver = init_driver()  # Initialisation du driver (mode headless si configuré)
+    driver = init_driver()
     old_data = load_json("offres_marocannonces.json")
-    new_offres = []  # Stockera uniquement les nouvelles offres
-    new_data = []
+    all_offers, new_data = [], []
+
     try:
-        # Construction de l'URL de base (pagination)
         base_url = "https://www.marocannonces.com/maroc/offres-emploi-b309.html?kw=data+&pge={}"
-        page_num = 1
-        while change_page(driver, base_url, page_num):
-            offers_list = extract_offers(driver)
-            if not offers_list:
-                logger.info(
-                    "Aucune offre trouvée sur cette page. Fin de la pagination."
-                )
+        page = 1
+
+        while change_page(driver, base_url, page):
+            offers = extract_offers(driver)
+            if not offers:
+                logger.info("Fin de la pagination.")
                 break
+            all_offers.extend(offers)
+            page += 1
 
-            new_offres.extend(offers_list)
-            page_num += 1
+        logger.info(f"{len(all_offers)} offres collectées (sans détails)")
 
-        logger.info(f"Total offres extraites (avant détails) : {len(new_offres)}")
-
-        for offer in new_offres:
-            offer_url = offer.get("job_url")
-
-            if not offer_url:
-                logger.info("URL introuvable pour cette offre, passage à la suivante.")
+        for offer in all_offers:
+            url = offer.get("job_url")
+            if not url or check_duplicate(old_data, url):
                 continue
 
-            if check_duplicate(old_data, offer_url):
-                continue
+            logger.info(f"Détails en cours pour : {url}")
+            offer.update(extract_offer_details(driver, url))
 
-            logger.info(f"Extraction des détails de l'offre : {offer_url}")
-            details = extract_offer_details(driver, offer_url)
-            offer.update(details)
-
-            try:
-                pub_date = offer.get("publication_date")
-                existing_pub_dates = [date.get("publication_date") for date in old_data]
-                if pub_date and pub_date in existing_pub_dates:
-                    logger.info(
-                        f"Offre existante détectée (date: {pub_date}), non ajoutée."
-                    )
-                    continue
-            except Exception as e:
-                logger.warning(f"Erreur lors de l'extraction de la date : {e}")
+            pub_date = offer.get("publication_date")
+            if pub_date and any(
+                pub_date == o.get("publication_date") for o in old_data
+            ):
+                logger.info(f"Offre déjà existante (date: {pub_date}), ignorée.")
                 continue
 
             try:
-                validate_json(offer)  # Valider la structure JSON de l'offre
+                validate_json(offer)
                 new_data.append(offer)
             except Exception as e:
-                logger.exception(
-                    f"Erreur de validation JSON pour l'offre {offer_url}: {e}"
-                )
-                continue
+                logger.exception(f"Offre invalide : {url} - {e}")
 
-    except Exception as e:
-        logger.warning(f"Erreur lors de l'extraction: {e}")
     finally:
-        if driver:
-            driver.quit()
-        logger.info(f"Nouvelles offres collectées : {len(new_data)}")
-        # Combinaison des offres existantes et des nouvelles offres
-
+        driver.quit()
+        logger.info(f"{len(new_data)} nouvelles offres collectées.")
         save_json(new_data, "offres_marocannonces.json")
+        logger.info("Scraping terminé.")
 
-        logger.info("Extraction terminée !")
     return new_data
 
 
-main()
+if __name__ == "__main__":
+    main()

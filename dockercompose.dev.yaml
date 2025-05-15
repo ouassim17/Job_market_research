@@ -12,12 +12,9 @@ services:
   celery_worker:
     build:
       context: .
-      dockerfile: Dockerfile.celery
+      dockerfile: Dockerfile
     container_name: celery_worker
     depends_on:
       - redis
     #volumes:
     #  - .:/app
-    environment:
-      - PYTHONPATH=/app
-    #command: celery -A app.tasks.py worker -l INFO

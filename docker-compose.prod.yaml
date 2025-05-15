@@ -10,11 +10,12 @@ services:
     environment:
       - REDIS_HOSTS=local:redis:6379
   celery_worker:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: celery_worker
     depends_on:
       - redis
-    volumes:
-      - .:/app
     environment:
       - PYTHONPATH=/app
+    command: celery -A app.tasks.py worker -l INFO

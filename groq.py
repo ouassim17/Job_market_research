@@ -3,18 +3,16 @@ import json
 import logging
 import re
 import time
-import random
 from datetime import datetime
 import requests
 from dotenv import load_dotenv
-from collections import Counter
 
 # Configuration des logs
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('traitement_demon.log', encoding='utf-8'),
+        logging.FileHandler('traitement_groq.log', encoding='utf-8'),
         logging.StreamHandler()
     ]
 )
@@ -27,8 +25,9 @@ if not API_KEY or not API_KEY.startswith("gsk_"):
     logging.error("Clé API Groq non configurée - Vérifiez .env")
     exit(1)
 
-INPUT_FILE = r"C:\Users\houss\Desktop\DXC\Job_market_research\Data_extraction\Traitement\output\backup_offers_20250512_193230.json"
-OUTPUT_FILE = "processed_jobs_demon.json"
+# Fichiers d'entrée et de sortie
+INPUT_FILE = r,input_buckup
+OUTPUT_FILE = "processed_jobs_groq.json"
 
 # Pré-prompt et prompt système pour GROQ
 PRE_PROMPT = (
@@ -55,7 +54,6 @@ def load_json(file_path):
         exit(1)
 
 # Préparation d'une offre
-
 def prepare_offer(o):
     secteurs = [s.strip() for s in re.split(r'[;,]', o.get('secteur','')) if s.strip()]
     comp_list = [c.strip() for c in re.split(r'[;,]', o.get('intro','').lower()) if c.strip()]
@@ -98,36 +96,54 @@ def safe_int(value):
     except (TypeError, ValueError):
         return 0
 
-# Requête GROQ avec gestion backoff et jitter
-
+# Requête GROQ avec gestion des erreurs et des quotas
 def process_with_groq(batch):
-    url = GROQ_URL
-    # Correction URL si typo
-    if 'openaiv1' in url:
-        url = url.replace('openaiv1', 'openai/v1')
-
     max_retries = 3
     system_msg = PRE_PROMPT + "\n" + SYSTEM_PROMPT
     user_msg = "\n---\n".join([
         f"Titre: {o['title']}\nDescription: {o['description'][:1000]}\nURL: {o['job_url']}" for o in batch
     ])
-    payload = {'model':'llama3-8b-8192','temperature':0.1,'messages':[{'role':'system','content':system_msg},{'role':'user','content':user_msg}]}
+    payload = {
+    'model': 'llama3-70b-8192',  # modèle Groq encore actif
+    'temperature': 0.1,
+    'messages': [
+        {'role': 'system', 'content': system_msg},
+        {'role': 'user', 'content': user_msg}
+    ]
+}
+
 
     for attempt in range(max_retries):
-        resp = requests.post(url, headers={'Authorization':f'Bearer {API_KEY}','Content-Type':'application/json'}, json=payload, timeout=60)
-        if resp.status_code == 429:
-            logging.warning("Rate limit 429 détecté, pause fixe de 30s pour éviter les blocages")
-            time.sleep(30)
-            continue
-        if not resp.ok:
-            logging.error(f"Erreur API {resp.status_code}: {resp.text}")
-            return []
-        return clean_response(resp.json().get('choices',[])[0].get('message',{}).get('content',''))
-    logging.error("Échec après retries, abandon du batch")
+        try:
+            resp = requests.post(
+                GROQ_URL,
+                headers={
+                    'Authorization': f'Bearer {API_KEY}',
+                    'Content-Type': 'application/json'
+                },
+                json=payload,
+                timeout=60
+            )
+
+            if resp.status_code == 429:
+                logging.warning("Quota dépassé, attente de 60 secondes.")
+                time.sleep(60)
+                continue
+
+            if not resp.ok:
+                logging.error(f"Erreur API {resp.status_code} : {resp.text}")
+                return []
+
+            content = resp.json().get("choices", [])[0]["message"]["content"]
+            return clean_response(content)
+
+        except Exception as e:
+            logging.error(f"Erreur lors de la requête API : {e}")
+            time.sleep(10)
+    logging.error("Échec après plusieurs tentatives, abandon du batch")
     return []
 
 # Pipeline principal
-
 def main():
     data = load_json(INPUT_FILE)
     batch_size = 10
@@ -143,7 +159,8 @@ def main():
         # Pause fixe de 30s après chaque requête pour éviter tout 429
         logging.info("Pause fixe de 30s entre chaque requête")
         time.sleep(30)
-    with open(OUTPUT_FILE,'w',encoding='utf-8') as f: json.dump(results,f,ensure_ascii=False,indent=2)
+    with open(OUTPUT_FILE,'w',encoding='utf-8') as f:
+        json.dump(results,f,ensure_ascii=False,indent=2)
     logging.info(f"Enregistré {len(results)} offres dans {OUTPUT_FILE}")
 
 if __name__=='__main__':

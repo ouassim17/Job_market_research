@@ -12,11 +12,12 @@ FROM python:3.10-slim-bullseye
 COPY --from=builder app/.venv app/.venv
 
 #Copying project files
-COPY /celery /app/celery
+COPY . /app
 ENV PATH="/app/.venv/bin:$PATH" \
-    PYTHONPATH="app/.venv/lib/python3.10/site-packages"
+    PYTHONPATH="/app:app/.venv/lib/python3.10/site-packages"
 RUN python --version
 RUN celery --version
 RUN ls -R
+WORKDIR /app/celery_app
 #Running the celery worker
-CMD ["celery", "-A", "celery.tasks", "worker", "--loglevel=info"]
+CMD ["celery", "-A", "tasks", "worker", "--loglevel=info"]

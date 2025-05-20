@@ -3,7 +3,7 @@ name = "job-analytics"
 version = "0.1.0"
 description = "A job analytics tool using web scraping and data analysis."
 authors = [
-  { name = "Souhail Khalmadani", email = "youremail@example.com" }
+  { name = "Souhail Khalmadani", email = "souhailkhalmadani11@gmail.com" }
 ]
 requires-python = ">=3.10"
 
@@ -13,6 +13,7 @@ dependencies = [
   "blinker>=1.9.0",
   "blis==1.2.0",
   "catalogue==2.0.10",
+  "celery>=5.5.2",
   "certifi==2025.1.31",
   "cffi==1.17.1",
   "charset-normalizer==3.4.1",
@@ -23,6 +24,7 @@ dependencies = [
   "cymem==2.0.11",
   "dnspython==2.7.0",
   "dotenv==0.9.9",
+  "flower>=2.0.1",
   "h11==0.14.0",
   "idna==3.10",
   "Jinja2==3.1.6",
@@ -50,6 +52,7 @@ dependencies = [
   "pymongo==4.11.3",
   "PySocks==1.7.1",
   "python-dotenv==1.1.0",
+  "redis>=6.1.0",
   "referencing==0.36.2",
   "requests==2.32.3",
   "rich==13.9.4",

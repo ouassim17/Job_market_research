@@ -4,11 +4,12 @@ import re
 import subprocess
 import sys
 
+from data_extraction.Websites import setup_logger
+
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 sys.path.insert(0, parent_dir)
 
-from Websites.selenium_init import setup_logger  # noqa
 
 # Configuration du logging
 logger = setup_logger("main.log")

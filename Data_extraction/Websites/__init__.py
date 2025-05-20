@@ -23,15 +23,12 @@ def init_driver(
     executable_path=find_chromedriver_exe(),
     proxy_index=0,
 ):
-    # Creation du proxy
-    # proxy_path=current_dir+"\checked_proxies.txt"
-    # proxies=open(proxy_path,"r").readlines()
-    # proxy_ip_port=str(proxies[proxy_index]).strip()
     # Creation et configuration du Driver, pour pointer sur le driver changez le chemin executable_path
     # service = Service(executable_path)
     chrome_options = Options()
     # chrome_options.add_argument(f"--proxy-server={proxy_ip_port}")
     chrome_options.add_argument("--start-maximized")
+    # chrome_options.add_argument("--headless")
     temp_dir = tempfile.mkdtemp(prefix="profile_")
     driver = uc.Chrome(
         headless=False,
@@ -39,7 +36,7 @@ def init_driver(
         options=chrome_options,
         user_data_dir=temp_dir,
     )
-    # chrome_options.add_argument("--headless")
+
     driver.implicitly_wait(
         2
     )  # Time before the program exits in case of exception in seconds, will not wait if the program runs normally

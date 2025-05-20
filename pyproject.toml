@@ -24,6 +24,7 @@ dependencies = [
   "cymem==2.0.11",
   "dnspython==2.7.0",
   "dotenv==0.9.9",
+  "flower>=2.0.1",
   "h11==0.14.0",
   "idna==3.10",
   "Jinja2==3.1.6",

@@ -11,7 +11,7 @@ current_path = os.path.abspath(__file__)
 current_dir = os.path.dirname(current_path)
 
 
-def find_chromedriver_exe(root_path=os.getcwd()):
+def find_chromedriver_exe(root_path=os.path.dirname(os.getcwd())):
     for dirpath, _, filenames in os.walk(root_path):
         for file in filenames:
             if file.lower() == "chromedriver.exe":

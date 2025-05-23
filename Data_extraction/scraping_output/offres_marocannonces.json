@@ -349,5 +349,30 @@
         "salaire": "4 000 - 6 000 DH",
         "ville": "Tanger",
         "extra": "Confidentiel"
+    },
+    {
+        "titre": "Customer service manager / casablanca",
+        "region": "Casablanca",
+        "job_url": "https://www.marocannonces.com/categorie/309/Offres-emploi/annonce/10139762/Customer-service-manager-casablanca.html",
+        "via": "Maroc_annonces",
+        "publication_date": "19 May-14:20",
+        "domaine": "Autre",
+        "fonction": "Logistique/Métiers du Transport",
+        "contrat": "CDI",
+        "ville": "Casablanca",
+        "extra": "responsable recrutement"
+    },
+    {
+        "titre": "électriciens - data stewards (h/f) / casablanca",
+        "region": "Casablanca",
+        "job_url": "https://www.marocannonces.com/categorie/309/Offres-emploi/annonce/10122369/%C3%A9lectriciens-data-stewards-(hf)-casablanca.html",
+        "via": "Maroc_annonces",
+        "publication_date": "15 May-13:29",
+        "domaine": "Industrie / Ingénierie / Energie",
+        "fonction": "Ingénierie - Electro-tech./Automat",
+        "contrat": "CDI",
+        "salaire": "8 000 - 10 000 DH",
+        "ville": "Casablanca",
+        "extra": "M. MIMOUNI"
     }
 ]

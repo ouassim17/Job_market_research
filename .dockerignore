@@ -1,11 +1,21 @@
+
 .venv/
+
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+
 data_extraction/scraping_output/
 
+data_extraction/Websites/chromedriver-win64/
 *.exe
+
+
+
+data_extraction/log
+*.log
+
+*.json
 *.csv
 .env
-*.log

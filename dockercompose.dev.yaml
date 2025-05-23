@@ -1,0 +1,64 @@
+name: Job_analytics_app
+services:
+
+  redis:
+    image: redis:latest
+    container_name: redis
+
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+  redis-commander:
+    image: rediscommander/redis-commander
+    container_name: rediscommander
+
+    ports:
+      - "8081:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile.celery
+    image: app_image
+    container_name: celery_container
+    command: ["celery", "-A", "celery_app.tasks", "worker", "--loglevel=info", "-E"]
+    depends_on:
+      - redis
+    user: celery_user
+    volumes:
+      - ./celery_app:/app/celery_app
+
+  flower:
+
+    image: app_image
+    container_name: flower_container
+    ports:
+      - "5555:5555"
+    command: ["celery", "-A", "celery_app.tasks", "flower", "--port=5555","--loglevel=info"]
+    user: flower_user
+    volumes:
+      - ./celery_app:/app/celery_app
+      - ./data_extraction:/app/data_extraction
+    depends_on:
+      - redis
+      - celery
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - flower
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+    - 3000:3000
+    depends_on:
+      - prometheus
+volumes:
+  redis_data:

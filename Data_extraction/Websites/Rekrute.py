@@ -5,7 +5,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium_init import (
+
+from data_extraction.Websites import (
     check_duplicate,
     init_driver,
     load_json,
@@ -171,8 +172,6 @@ def get_pages_url(driver):
             "href"
         )
         driver.get(page_link)
-        time.sleep(2)
-
         pagination = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located(
                 (By.CSS_SELECTOR, "div.slide-block div.pagination select")
@@ -205,6 +204,9 @@ def change_page(driver, page_url):
 
 
 def main():
+    """Cette fonction permet de parcourir le site rekrute et d'en extraire les offres d'emploi.
+    L'utilisation par defaut recherche des offres liées au domaine de la Data.
+    """
     start_time = time.time()
 
     logger.info("Début de l'extraction des offres d'emploi sur Rekrute")
@@ -235,6 +237,7 @@ def main():
 <<<<<<< HEAD:Data_extraction/Rekrute.py
 <<<<<<< HEAD
 
+<<<<<<< HEAD
 main()
 =======
 if __name__ == "__main__":
@@ -244,3 +247,7 @@ if __name__ == "__main__":
 
 main()
 >>>>>>> 731a9834323e3a209b1f9c7c9929f03f49fc4f10:Data_extraction/Websites/Rekrute.py
+=======
+if __name__ == "__main__":
+    main()
+>>>>>>> 3ea708a44bd77e34da6a49c64d1e7a37ac5a8b82

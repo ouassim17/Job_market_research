@@ -1,5 +1,5 @@
 from celery import Celery
 
-app = Celery(
-    "celery_app", broker="redis://redis:6379/0", backend="redis://redis:6379/0"
-)
+app = Celery("celery_app")
+default_config = "celery_app.celeryconfig"
+app.config_from_object(default_config)

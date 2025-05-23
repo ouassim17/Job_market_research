@@ -20,11 +20,12 @@ def find_chromedriver_exe(root_path=os.path.dirname(os.getcwd())):
 
 
 def init_driver(
-    executable_path=find_chromedriver_exe(),
+    executable_path=os.path.join(current_dir, "chromedriver.exe"),
     proxy_index=0,
 ):
     # Creation et configuration du Driver, pour pointer sur le driver changez le chemin executable_path
     # service = Service(executable_path)
+    print(f"excutable path is {executable_path}")
     chrome_options = Options()
     # chrome_options.add_argument(f"--proxy-server={proxy_ip_port}")
     chrome_options.add_argument("--start-maximized")

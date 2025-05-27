@@ -47,5 +47,6 @@ RUN groupadd --gid 1000 celery_group \
 RUN mkdir -p /app/data_extraction/Websites/log
 RUN chown -R celery_user:celery_group /app/data_extraction
 
+
 # Set workdir
 WORKDIR /app

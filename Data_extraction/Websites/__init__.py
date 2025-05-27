@@ -1,20 +1,17 @@
 import json
 import logging
 import os
-<<<<<<< HEAD
 import sys
-=======
 import tempfile
-
->>>>>>> 06572de2b55ec9ee969bebf9f33ea25d80aa546d
 import undetected_chromedriver as uc
 from jsonschema import ValidationError, validate
 from selenium.webdriver.chrome.options import Options
 
+
 current_path = os.path.abspath(__file__)
 current_dir = os.path.dirname(current_path)
 
-<<<<<<< HEAD
+
 # Setup logger
 def setup_logger(filename="app.log"):
     logger = logging.getLogger("my_logger")
@@ -105,10 +102,12 @@ if __name__ == "__main__":
         if driver:
             logger.info("Closing WebDriver.")
             driver.quit()
-=======
+
 
 def init_driver():
     # Creation et configuration du Driver, pour pointer sur le driver changez le chemin executable_path
+    current_path = os.path.abspath(__file__)
+    current_dir = os.path.dirname(current_path)
     executable_path = os.path.join(current_dir, "chromedriver-linux64/chromedriver")
     chrome_path = os.path.join(current_dir, "chrome-linux64/chrome")
     # executable_path=os.path.join(current_dir, "chromedriver") #PS: for windows
@@ -248,7 +247,12 @@ def save_json(data: list, filename="default.json", output_directory="scraping_ou
         json.dump(merged_data, js_file, ensure_ascii=False, indent=4)
 
 
-def validate_json(data, schema_path=os.path.join(current_dir, "Job_schema.json")):
+def validate_json(
+    data,
+    schema_path=os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "Job_schema.json"
+    ),
+):
     """Validates the json data according to the schema provided in arguments"""
     with open(schema_path) as f:
         schema = json.load(f)
@@ -312,4 +316,4 @@ def setup_logger(filename="app.log", level=logging.INFO):
         logger.setLevel(level)
 
     return logger
->>>>>>> 06572de2b55ec9ee969bebf9f33ea25d80aa546d
+

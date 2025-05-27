@@ -1,7 +1,7 @@
 name: Lint on push and pull request
 on:
   push:
-    branches: [main]
+    branches: ['*']
   pull_request:
     branches: [main]
 
@@ -24,10 +24,10 @@ jobs:
           uv sync
       - name: Set up Git user
         run: |
-          git config --global user.name "souhail"
-          git config --global user.email "souhailkhalmadani11@gmail.com"
-      - name: Run pre-commit checks
+          git config user.name "${{ secrets.GIT_USER_NAME }}"
+          git config user.email "${{ secrets.GIT_USER_EMAIL }}"
 
+      - name: Run pre-commit checks
         run: |
           pre-commit install
           pre-commit autoupdate

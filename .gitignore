@@ -6,7 +6,8 @@
 
 
 
-
+.pytest_cache
+.ruff_cache
 *.log
 *.txt
 *pyc

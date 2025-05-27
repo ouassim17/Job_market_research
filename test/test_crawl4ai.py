@@ -4,7 +4,7 @@ from crawl4ai import AsyncWebCrawler
 from openai import OpenAI
 
 # --- Configuration ---
-OPENAI_API_KEY = "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"  # Remplace par ta clé OpenAI
+OPENAI_API_KEY = ""  # Remplace par ta clé OpenAI
 os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 client = OpenAI(api_key=OPENAI_API_KEY)
 

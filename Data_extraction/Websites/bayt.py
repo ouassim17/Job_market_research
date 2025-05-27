@@ -24,8 +24,6 @@ from data_extraction.Websites import (
     validate_json,
 )
 
-logger = setup_logger("bayt.log")
-
 
 def extract_date_from_text(text: str):
     try:
@@ -237,8 +235,9 @@ def change_page(
         return False
 
 
-def bayt_scrape():
+def main():
     start_time = time.time()
+
     logger.info("Début de l'extraction des offres d'emploi sur Bayt.com")
     # Initialiser le driver
     try:
@@ -272,5 +271,10 @@ def bayt_scrape():
     return data
 
 
+<<<<<<< HEAD
+main()
+=======
 if __name__ == "__main__":
-    bayt_scrape()
+    logger = setup_logger("bayt.log")
+    main()
+>>>>>>> 06572de2b55ec9ee969bebf9f33ea25d80aa546d

@@ -15,8 +15,6 @@ from data_extraction.Websites import (
     validate_json,
 )
 
-logger = setup_logger("Rekrute.log")
-
 
 # --- Fonction d'extraction des offres sur la page courante ---
 def extract_offers(driver):
@@ -234,20 +232,8 @@ def main():
         logger.info(f"Extraction terminée en {time.time() - start_time} secondes.")
     return data
 
-<<<<<<< HEAD:Data_extraction/Rekrute.py
-<<<<<<< HEAD
 
-<<<<<<< HEAD
-main()
-=======
-if __name__ == "__main__":
-    main()
->>>>>>> cb5e57dae1303f5b6972c7769f0b65dbb1d3d9e2
-=======
 
-main()
->>>>>>> 731a9834323e3a209b1f9c7c9929f03f49fc4f10:Data_extraction/Websites/Rekrute.py
-=======
 if __name__ == "__main__":
+    logger = setup_logger("Rekrute.log")
     main()
->>>>>>> 3ea708a44bd77e34da6a49c64d1e7a37ac5a8b82

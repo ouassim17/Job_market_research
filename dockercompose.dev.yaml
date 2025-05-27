@@ -29,6 +29,8 @@ services:
     user: celery_user
     volumes:
       - ./celery_app:/app/celery_app
+      - output:/app/data_extraction/scraping_output
+      - logs:/app/data_extraction/Websites/log
 
   flower:
 
@@ -37,10 +39,9 @@ services:
     ports:
       - "5555:5555"
     command: ["celery", "-A", "celery_app.tasks", "flower", "--port=5555","--loglevel=info"]
-    user: flower_user
+    user: celery_user
     volumes:
       - ./celery_app:/app/celery_app
-      - ./data_extraction:/app/data_extraction
     depends_on:
       - redis
       - celery
@@ -62,3 +63,5 @@ services:
       - prometheus
 volumes:
   redis_data:
+  logs:
+  output:

@@ -11,7 +11,8 @@ data_extraction/Websites/log/*.log
 data_extraction/Websites/chromedriver-win64/
 *.exe
 
-
+.pytest_cache
+.ruff_cache
 
 
 *.log

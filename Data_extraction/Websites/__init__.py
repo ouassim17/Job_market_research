@@ -7,12 +7,11 @@ import undetected_chromedriver as uc
 from jsonschema import ValidationError, validate
 from selenium.webdriver.chrome.options import Options
 
-current_path = os.path.abspath(__file__)
-current_dir = os.path.dirname(current_path)
-
 
 def init_driver():
     # Creation et configuration du Driver, pour pointer sur le driver changez le chemin executable_path
+    current_path = os.path.abspath(__file__)
+    current_dir = os.path.dirname(current_path)
     executable_path = os.path.join(current_dir, "chromedriver-linux64/chromedriver")
     chrome_path = os.path.join(current_dir, "chrome-linux64/chrome")
     # executable_path=os.path.join(current_dir, "chromedriver") #PS: for windows
@@ -152,7 +151,12 @@ def save_json(data: list, filename="default.json", output_directory="scraping_ou
         json.dump(merged_data, js_file, ensure_ascii=False, indent=4)
 
 
-def validate_json(data, schema_path=os.path.join(current_dir, "Job_schema.json")):
+def validate_json(
+    data,
+    schema_path=os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "Job_schema.json"
+    ),
+):
     """Validates the json data according to the schema provided in arguments"""
     with open(schema_path) as f:
         schema = json.load(f)

@@ -15,8 +15,6 @@ from data_extraction.Websites import (
     validate_json,
 )
 
-logger = setup_logger("Rekrute.log")
-
 
 # --- Fonction d'extraction des offres sur la page courante ---
 def extract_offers(driver):
@@ -236,4 +234,5 @@ def main():
 
 
 if __name__ == "__main__":
+    logger = setup_logger("Rekrute.log")
     main()

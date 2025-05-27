@@ -11,29 +11,25 @@ current_path = os.path.abspath(__file__)
 current_dir = os.path.dirname(current_path)
 
 
-def find_chromedriver_exe(root_path=os.path.dirname(os.getcwd())):
-    for dirpath, _, filenames in os.walk(root_path):
-        for file in filenames:
-            if file.lower() == "chromedriver.exe":
-                return os.path.join(dirpath, file)
-    return None
-
-
-def init_driver(
-    executable_path=os.path.join(current_dir, "chromedriver.exe"),
-    proxy_index=0,
-):
+def init_driver():
     # Creation et configuration du Driver, pour pointer sur le driver changez le chemin executable_path
-    # service = Service(executable_path)
-    print(f"excutable path is {executable_path}")
+    executable_path = os.path.join(current_dir, "chromedriver-linux64/chromedriver")
+    chrome_path = os.path.join(current_dir, "chrome-linux64/chrome")
+    # executable_path=os.path.join(current_dir, "chromedriver") #PS: for windows
     chrome_options = Options()
-    # chrome_options.add_argument(f"--proxy-server={proxy_ip_port}")
-    chrome_options.add_argument("--start-maximized")
-    # chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--headless")  # exécute Chrome sans interface
+    chrome_options.add_argument("--no-sandbox")  # requis pour Docker
+    chrome_options.add_argument(
+        "--disable-dev-shm-usage"
+    )  # évite les erreurs liées à /dev/shm
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--remote-debugging-port=9222")
+    # chrome_options.add_argument("--start-maximized")
+
     temp_dir = tempfile.mkdtemp(prefix="profile_")
     driver = uc.Chrome(
-        headless=False,
         driver_executable_path=executable_path,
+        browser_executable_path=chrome_path,
         options=chrome_options,
         user_data_dir=temp_dir,
     )
@@ -183,26 +179,40 @@ def check_duplicate(data, job_url):
 
 
 # Set up a logger
-def setup_logger(filename="app.log"):
+def setup_logger(filename="app.log", level=logging.INFO):
+    """A custom logger function for the web scrapers. By default the logging level is INFO.
+
+    filename: the desired name for the log file
+
+    level: the level of logging to be printed out, includes INFO-DEBUG-ERROR
+    """
     logger = logging.getLogger("my_logger")
     logger.propagate = False  # Disable propagation to root logger
+    # Defining the file path
     current_path = os.path.abspath(__file__)
     current_dir = os.path.dirname(current_path)
-    log_dir = os.path.join(current_dir, "log", filename)
+    log_folder = os.path.join(current_dir, "log")
+    log_file = os.path.join(log_folder, filename)
+    # create the log folder if not found
+    os.makedirs(log_folder, exist_ok=True)
+    # create the log file if not found
+    if not os.path.exists(log_file):
+        open(log_file, "w")
+        pass
     if not logger.hasHandlers():
         # Set the default logging configuration
-        file_handler = logging.FileHandler(log_dir)  # Log to a file
+        file_handler = logging.FileHandler(log_file)  # Log to a file
         console_handler = logging.StreamHandler()  # Log to the console
         # Set logging level
-        file_handler.setLevel(logging.INFO)
-        console_handler.setLevel(logging.INFO)
+        file_handler.setLevel(level)
+        console_handler.setLevel(level)
         # Set the time format
         formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
         file_handler.setFormatter(formatter)
         console_handler.setFormatter(formatter)
         # Add the handlers to the logger
         logger.addHandler(file_handler)
-        logger.addHandler(console_handler)
-        logger.setLevel(logging.INFO)
+        # logger.addHandler(console_handler) # Adds logging to console (stdout)
+        logger.setLevel(level)
 
     return logger

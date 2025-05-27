@@ -15,6 +15,7 @@ from data_extraction.Websites import (
     validate_json,
 )
 
+logger = setup_logger("emploi.log")
 # Liste pour stocker les nouvelles données scrappées
 new_jobs = []
 
@@ -40,7 +41,7 @@ def get_number_pages(driver: webdriver.Chrome):
         return 1
 
 
-def main():
+def main(logger=setup_logger("emploi.log")):
     # Initialisation du driver
     driver = init_driver()
 
@@ -245,5 +246,4 @@ def main():
 
 
 if __name__ == "__main__":
-    logger = setup_logger("emploi.log")
     main()

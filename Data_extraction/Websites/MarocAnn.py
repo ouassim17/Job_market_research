@@ -19,6 +19,8 @@ from data_extraction.Websites import (
     validate_json,
 )
 
+logger = setup_logger("maroc_ann.log")
+
 
 def extract_offers(driver: webdriver.Chrome):
     """Extrait les offres sur la page actuelle du site."""
@@ -146,7 +148,7 @@ def change_page(driver, base_url, page_num):
         return False
 
 
-def main():
+def main(logger=setup_logger("maroc_ann.log")):
     driver = init_driver()
     old_data = load_json("offres_marocannonces.json")
     all_offers, new_data = [], []
@@ -196,5 +198,4 @@ def main():
 
 
 if __name__ == "__main__":
-    logger = setup_logger("maroc_ann.log")
     main()

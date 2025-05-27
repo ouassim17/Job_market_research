@@ -15,6 +15,8 @@ from data_extraction.Websites import (
     validate_json,
 )
 
+logger = setup_logger("Rekrute.log")
+
 
 # --- Fonction d'extraction des offres sur la page courante ---
 def extract_offers(driver):
@@ -201,7 +203,7 @@ def change_page(driver, page_url):
         )
 
 
-def main():
+def main(logger=setup_logger("Rekrute.log")):
     """Cette fonction permet de parcourir le site rekrute et d'en extraire les offres d'emploi.
     L'utilisation par defaut recherche des offres liées au domaine de la Data.
     """
@@ -234,5 +236,4 @@ def main():
 
 
 if __name__ == "__main__":
-    logger = setup_logger("Rekrute.log")
     main()

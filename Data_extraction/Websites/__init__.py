@@ -212,7 +212,7 @@ def setup_logger(filename="app.log", level=logging.INFO):
         console_handler.setFormatter(formatter)
         # Add the handlers to the logger
         logger.addHandler(file_handler)
-        logger.addHandler(console_handler)
+        # logger.addHandler(console_handler) # Adds logging to console (stdout)
         logger.setLevel(level)
 
     return logger

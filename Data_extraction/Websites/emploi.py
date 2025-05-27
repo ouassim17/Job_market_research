@@ -5,7 +5,8 @@ from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium_init import (
+
+from data_extraction.Websites import (
     check_duplicate,
     init_driver,
     load_json,
@@ -13,10 +14,6 @@ from selenium_init import (
     setup_logger,
     validate_json,
 )
-
-logger = setup_logger("emploi.log")
-# Initialisation du driver
-driver = init_driver()
 
 # Liste pour stocker les nouvelles données scrappées
 new_jobs = []
@@ -44,6 +41,9 @@ def get_number_pages(driver: webdriver.Chrome):
 
 
 def main():
+    # Initialisation du driver
+    driver = init_driver()
+
     try:
         access_emploi(driver)
         max_pages = get_number_pages(driver)
@@ -244,4 +244,10 @@ def main():
     return new_jobs
 
 
+<<<<<<< HEAD
 main()
+=======
+if __name__ == "__main__":
+    logger = setup_logger("emploi.log")
+    main()
+>>>>>>> 06572de2b55ec9ee969bebf9f33ea25d80aa546d

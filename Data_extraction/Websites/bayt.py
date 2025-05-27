@@ -14,7 +14,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium_init import (
+
+from data_extraction.Websites import (
     check_duplicate,
     init_driver,
     load_json,
@@ -22,8 +23,6 @@ from selenium_init import (
     setup_logger,
     validate_json,
 )
-
-logger = setup_logger("bayt.log")
 
 
 def extract_date_from_text(text: str):
@@ -238,6 +237,7 @@ def change_page(
 
 def main():
     start_time = time.time()
+
     logger.info("Début de l'extraction des offres d'emploi sur Bayt.com")
     # Initialiser le driver
     try:
@@ -271,4 +271,10 @@ def main():
     return data
 
 
+<<<<<<< HEAD
 main()
+=======
+if __name__ == "__main__":
+    logger = setup_logger("bayt.log")
+    main()
+>>>>>>> 06572de2b55ec9ee969bebf9f33ea25d80aa546d

@@ -5,7 +5,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium_init import (
+
+from data_extraction.Websites import (
     check_duplicate,
     init_driver,
     load_json,
@@ -13,8 +14,6 @@ from selenium_init import (
     setup_logger,
     validate_json,
 )
-
-logger = setup_logger("Rekrute.log")
 
 
 # --- Fonction d'extraction des offres sur la page courante ---
@@ -203,6 +202,9 @@ def change_page(driver, page_url):
 
 
 def main():
+    """Cette fonction permet de parcourir le site rekrute et d'en extraire les offres d'emploi.
+    L'utilisation par defaut recherche des offres liées au domaine de la Data.
+    """
     start_time = time.time()
 
     logger.info("Début de l'extraction des offres d'emploi sur Rekrute")
@@ -231,4 +233,10 @@ def main():
     return data
 
 
+<<<<<<< HEAD
 main()
+=======
+if __name__ == "__main__":
+    logger = setup_logger("Rekrute.log")
+    main()
+>>>>>>> 06572de2b55ec9ee969bebf9f33ea25d80aa546d

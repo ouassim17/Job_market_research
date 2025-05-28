@@ -1,35 +1,33 @@
 import os
-
 from minio import Minio
 from minio.error import S3Error
 
-# --- Configuration MinIO avec ton lien ngrok actif ---
-MINIO_URL = "3470-41-137-171-178.ngrok-free.app"
-ACCESS_KEY = "minioadmin"
-SECRET_KEY = "minioadmin"
-BUCKET_NAME = "job-data"
-FOLDER_PATH = "./Data_extraction/scraping_output"  # Dossier JSON du projet GitHub
+minio_client = Minio(
+    endpoint="localhost:9000",
+    access_key="minioadmin",
+    secret_key="minioadmin",
+    secure=False
+)
 
-# --- Connexion à MinIO ---
-client = Minio(MINIO_URL, access_key=ACCESS_KEY, secret_key=SECRET_KEY, secure=True)
+bucket_name = "job-data"
 
-# --- Création du bucket s'il n'existe pas ---
-if not client.bucket_exists(BUCKET_NAME):
-    client.make_bucket(BUCKET_NAME)
-    print(f"✅ Bucket '{BUCKET_NAME}' créé.")
+if not minio_client.bucket_exists(bucket_name):
+    minio_client.make_bucket(bucket_name)
+
+file_path = input("Entrez le chemin du fichier à uploader (relatif au projet GitHub) : ").strip()
+
+if not os.path.exists(file_path):
+    print("Le fichier spécifié n'existe pas.")
 else:
-    print(f"📦 Bucket '{BUCKET_NAME}' déjà existant.")
+    file_name = os.path.basename(file_path)
 
-# --- Upload automatique de tous les fichiers .json ---
-for filename in os.listdir(FOLDER_PATH):
-    if filename.endswith(".json"):
-        file_path = os.path.join(FOLDER_PATH, filename)
-        object_name = f"scraping_output/{filename}"
-
-        try:
-            client.fput_object(
-                BUCKET_NAME, object_name, file_path, content_type="application/json"
-            )
-            print(f"📤 Upload : {filename}")
-        except S3Error as err:
-            print(f"❌ Erreur : {filename} → {err}")
+    try:
+        minio_client.fput_object(
+            bucket_name,
+            file_name,
+            file_path,
+            content_type="application/octet-stream"
+        )
+        print(f"Fichier '{file_name}' uploadé avec succès dans le bucket '{bucket_name}'.")
+    except S3Error as err:
+        print(f"Erreur lors de l'upload : {err}")
